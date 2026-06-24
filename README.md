@@ -3,6 +3,8 @@
 **A standalone Windows desktop app that converts documents, images, and spreadsheets to clean Markdown — with built-in OCR and Bengali text support.**
 
 [![Release](https://img.shields.io/github/v/release/GRU-953/markitdown-converter?style=flat-square&color=0E8C7A)](https://github.com/GRU-953/markitdown-converter/releases/latest)
+[![CI](https://img.shields.io/github/actions/workflow/status/GRU-953/markitdown-converter/ci.yml?branch=master&style=flat-square&label=CI)](https://github.com/GRU-953/markitdown-converter/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen?style=flat-square)](https://github.com/GRU-953/markitdown-converter/actions/workflows/ci.yml)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%2F11-blue?style=flat-square&logo=windows)](https://github.com/GRU-953/markitdown-converter/releases/latest)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 [![Built with](https://img.shields.io/badge/Built%20with-MarkItDown-0E8C7A?style=flat-square)](https://github.com/microsoft/markitdown)
@@ -119,9 +121,15 @@ markitdown-converter/
 ├── brand.py              # GRU-953 colour tokens, font loader, asset paths
 ├── bijoy_unicode.py      # Bijoy / SutonnyMJ → Unicode conversion (Mukti port)
 ├── ocr_engine.py         # Tesseract wrapper — bundle-aware path resolution
+├── utils.py              # Shared utilities (DnD path parsing)
 ├── build_exe.bat         # PyInstaller build script
 ├── requirements.txt      # Python dependencies
-└── assets/               # Fonts (OFL), app icon, brand mark
+├── assets/               # Fonts (OFL), app icon, brand mark
+├── tests/                # pytest suite — 68 tests, 100% coverage
+│   ├── test_bijoy.py
+│   ├── test_ocr_engine.py
+│   └── test_utils.py
+└── .github/workflows/    # CI (pytest + coverage) and auto-release (exe on tag)
 ```
 
 ---
