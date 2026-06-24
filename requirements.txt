@@ -1,1 +1,7 @@
 markitdown
+customtkinter
+tkinterdnd2
+pytesseract
+Pillow
+markdown
+tkhtmlview
