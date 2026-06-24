@@ -14,7 +14,7 @@ def nfc(s):
     """Normalise to NFC so ya+nukta (U+09AF U+09BC) == yya (U+09DF)."""
     return unicodedata.normalize("NFC", s)
 
-from bijoy_unicode import convert_bijoy_to_unicode, detect_script, is_bijoy
+from bijoy_unicode import convert_bijoy_to_unicode, detect_script, is_bijoy, _rearrange
 
 
 # ── detect_script ─────────────────────────────────────────────────────────────
@@ -144,3 +144,57 @@ class TestConvertBijoyToUnicode:
         assert len(result) > 0
         # all chars should be Bengali code points or punctuation
         assert all(0x0980 <= ord(c) <= 0x09FF for c in result.strip())
+
+    # ── Deeper rearrangement edge-cases ──────────────────────────────────────
+
+    def test_rearrange_empty(self):
+        # _rearrange("") early-return guard (line 327)
+        assert _rearrange("") == ""
+
+    def test_double_halant_collapsed(self):
+        # "©¨" → র্ + ্য = "র্্য" (double halant) → collapsed to "র্য" (line 329)
+        result = convert_bijoy_to_unicode("©\xa8")
+        assert "্্" not in result
+
+    def test_reph_with_kar_before_it(self):
+        # "Kv©M" → কার্গ → reph finder skips kar to reach ক (line 341)
+        result = convert_bijoy_to_unicode("Kv\xa9M")
+        assert len(result) > 0
+        assert all(0x0980 <= ord(c) <= 0x09FF for c in result)
+
+    def test_reph_over_deep_conjunct(self):
+        # "ÿ©M" → ক্ষর্গ → cluster extends back through ক্ষ (lines 347-352)
+        result = convert_bijoy_to_unicode("\xff\xa9M")
+        assert len(result) > 0
+        assert all(0x0980 <= ord(c) <= 0x09FF for c in result)
+
+    def test_kar_halant_consonant_reorder(self):
+        # "Kw¨" → কি + ্য → kar immediately before halant → reordered (line 363)
+        # w = ি  ¨(U+00A8) = ্য
+        result = convert_bijoy_to_unicode("Kw\xa8")
+        assert len(result) > 0
+        assert all(0x0980 <= ord(c) <= 0x09FF for c in result)
+
+    def test_ra_halant_vowel_reorder(self):
+        # "©v" = র্ + া → ra+halant followed by aa-kar → reordered (line 372)
+        result = convert_bijoy_to_unicode("\xa9v")
+        assert len(result) > 0
+        assert all(0x0980 <= ord(c) <= 0x09FF for c in result)
+
+    def test_nukta_postkar_swap(self):
+        # "Kuv" = ক + ঁ + া → chandrabindu before aa-kar → swapped to কাঁ (line 405)
+        result = convert_bijoy_to_unicode("Kuv")
+        assert result == "কাঁ"
+
+    def test_reph_cluster_no_further_extension(self):
+        # "gK©M" = ম + ক + র্ + গ → reph walks back to ক but ম is not in conjunct (line 352)
+        result = convert_bijoy_to_unicode("gK\xa9M")
+        assert len(result) > 0
+        assert all(0x0980 <= ord(c) <= 0x09FF for c in result)
+
+    def test_pre_kar_over_conjunct(self):
+        # "†K¨M" = ে + ক + ্য + গ → pre-kar spans ক্য conjunct (line 386)
+        # In rearrangement Pass 2, j advances past the halant inside the conjunct
+        result = convert_bijoy_to_unicode("†K\xa8M")
+        assert len(result) > 0
+        assert all(0x0980 <= ord(c) <= 0x09FF for c in result)
