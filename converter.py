@@ -155,7 +155,11 @@ class App(TkinterDnD.Tk):
         root = ctk.CTkFrame(self, fg_color=P("bg"), corner_radius=0)
         root.pack(fill="both", expand=True)
         self._build_header(root)
+        self._build_status_bar(root)   # must be packed before tabs (side="bottom")
         self._build_tabs(root)
+        self.bind("<Control-o>", lambda _e: self._add_files())
+        self.bind("<Control-O>", lambda _e: self._add_files())
+        self.bind("<Control-Return>", lambda _e: self._convert_all())
 
     # ──────────────────────────────────────────────────────────── header ────
 
@@ -198,6 +202,22 @@ class App(TkinterDnD.Tk):
         ctk.CTkLabel(hdr, text="Mode  ",
                      font=(brand.FONT_UI_EN, 12),
                      text_color=P("text_muted")).pack(side="right")
+
+    # ──────────────────────────────────────────────────────── status bar ────
+
+    def _build_status_bar(self, parent):
+        bar = ctk.CTkFrame(parent, height=24, fg_color=P("surface"), corner_radius=0)
+        bar.pack(fill="x", side="bottom")
+        bar.pack_propagate(False)
+        self._status_lbl = ctk.CTkLabel(
+            bar, text="", anchor="w",
+            font=(brand.FONT_UI_EN, 11),
+            text_color=P("text_muted"),
+        )
+        self._status_lbl.pack(side="left", padx=12)
+
+    def _set_status(self, msg: str, token: str = "text_muted"):
+        self._status_lbl.configure(text=msg, text_color=P(token))
 
     # ──────────────────────────────────────────────────────────── tabs ──────
 
@@ -270,21 +290,27 @@ class App(TkinterDnD.Tk):
         # Buttons
         br = ctk.CTkFrame(left, fg_color="transparent")
         br.grid(row=2, column=0, sticky="ew", padx=10, pady=(0, 10))
-        br.grid_columnconfigure((0, 1, 2), weight=1)
+        br.grid_columnconfigure((0, 1, 2, 3), weight=1)
         for col, (txt, cmd, fg) in enumerate([
             ("+ Add Files",  self._add_files,   P("primary")),
             ("Convert All",  self._convert_all, P("primary")),
+            ("Save All",     self._save_all_md, P("surface_high")),
             ("Clear",        self._clear_files, P("surface_high")),
         ]):
-            ctk.CTkButton(
+            btn = ctk.CTkButton(
                 br, text=txt, height=34,
                 fg_color=fg,
                 hover_color=P("primary_hover") if fg == P("primary") else P("border"),
                 text_color=P("primary_text") if fg == P("primary") else P("text"),
                 font=(brand.FONT_UI_EN, 12),
                 command=cmd,
-            ).grid(row=0, column=col, padx=(0 if col == 0 else 3, 3 if col < 2 else 0),
-                   sticky="ew")
+            )
+            btn.grid(row=0, column=col,
+                     padx=(0 if col == 0 else 3, 3 if col < 3 else 0),
+                     sticky="ew")
+            if txt == "Save All":
+                self._save_all_btn = btn
+                btn.configure(state="disabled")
 
         # ── Right panel (output) ─────────────────────────────────────────────
         right = ctk.CTkFrame(tab, fg_color=P("surface"), corner_radius=8)
@@ -599,6 +625,9 @@ class App(TkinterDnD.Tk):
         self._rows.clear()
         self._refresh_list()
         self._set_raw("")
+        self._save_all_btn.configure(state="disabled")
+        if _mid is not None:
+            self._set_status("Ready")
 
     def _set_raw(self, text: str):
         self._raw_text.configure(state="normal")
@@ -616,10 +645,13 @@ class App(TkinterDnD.Tk):
                 "MarkItDown is still initializing.\nPlease try again in a moment.",
             )
             return
+        total = len(self._files)
+        self._set_status(f"Converting… (0 / {total} done)")
+        self._save_all_btn.configure(state="disabled")
         for f in self._files:
             f["status"] = "pending"
         self._refresh_list()
-        for i in range(len(self._files)):
+        for i in range(total):
             threading.Thread(
                 target=self._convert_one, args=(i,), daemon=True
             ).start()
@@ -634,8 +666,52 @@ class App(TkinterDnD.Tk):
             f["output"] = f"Conversion error:\n{exc}"
             f["status"]  = "error"
         self.after(0, self._refresh_list)
+        self.after(0, self._update_convert_status)
         if self._selected in (-1, idx):
             self.after(0, lambda: self._on_select(idx))
+
+    def _update_convert_status(self):
+        done    = sum(1 for f in self._files if f["status"] == "done")
+        errors  = sum(1 for f in self._files if f["status"] == "error")
+        pending = sum(1 for f in self._files if f["status"] == "pending")
+        total   = len(self._files)
+        if pending > 0:
+            self._set_status(f"Converting… ({done + errors} / {total} done)")
+        else:
+            if errors and done == 0:
+                self._set_status(f"All {errors} file{'s' if errors > 1 else ''} failed", "error")
+            elif errors:
+                self._set_status(
+                    f"Done — {done} converted, {errors} error{'s' if errors > 1 else ''}",
+                    "warning",
+                )
+            else:
+                self._set_status(f"Done — {done} file{'s' if done > 1 else ''} converted", "success")
+        self._save_all_btn.configure(state="normal" if done > 0 else "disabled")
+
+    def _save_all_md(self):
+        done_files = [f for f in self._files if f["status"] == "done"]
+        if not done_files:
+            messagebox.showinfo("Nothing to save", "Convert files first.")
+            return
+        folder = filedialog.askdirectory(title="Choose output folder")
+        if not folder:
+            return
+        out_dir = Path(folder)
+        saved = 0
+        for f in done_files:
+            stem = Path(f["name"]).stem
+            dest = out_dir / (stem + ".md")
+            counter = 1
+            while dest.exists():
+                dest = out_dir / f"{stem}_{counter}.md"
+                counter += 1
+            dest.write_text(f["output"], encoding="utf-8")
+            saved += 1
+        self._set_status(
+            f"Saved {saved} file{'s' if saved > 1 else ''} → {out_dir.name}/",
+            "success",
+        )
 
     # ──────────────────────────────────────────────────── OCR logic ──────────
 
@@ -733,6 +809,7 @@ class App(TkinterDnD.Tk):
         if text:
             self.clipboard_clear()
             self.clipboard_append(text)
+            self._set_status("Copied to clipboard")
 
     def _save_md(self):
         text = self._raw_text.get("1.0", "end").strip()
@@ -745,6 +822,7 @@ class App(TkinterDnD.Tk):
         )
         if path:
             Path(path).write_text(text, encoding="utf-8")
+            self._set_status(f"Saved → {Path(path).name}")
 
     def _save_txt(self, text: str):
         text = text.strip()
@@ -762,9 +840,14 @@ class App(TkinterDnD.Tk):
 
 def main():
     app = App()
-    # Defer MarkItDown loading until after the window is drawn and event loop is running.
-    # Starting it at module level or before Tk init can deadlock via import lock + GIL.
-    app.after(500, lambda: threading.Thread(target=_init_markitdown, daemon=True).start())
+    app._set_status("Initializing MarkItDown…")
+
+    def _bg():
+        _init_markitdown()
+        app.after(0, lambda: app._set_status("Ready"))
+
+    # Defer until after the window is drawn to avoid GIL/import-lock deadlock.
+    app.after(500, lambda: threading.Thread(target=_bg, daemon=True).start())
     app.mainloop()
 
 

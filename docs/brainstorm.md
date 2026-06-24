@@ -41,6 +41,13 @@ or static sites.
 - [x] Bijoy → Unicode conversion via Mukti engine port (bijoy_unicode.py)
 - [x] GRU-953 brand — teal palette, Figtree + Hind Siliguri + Tiro Bangla fonts
 
+## V3.1 additions (all shipped ✓)
+- [x] Status bar — shows "Initializing MarkItDown…" on launch, "Ready" after init
+- [x] Conversion progress — status bar updates per-file "Converting… (N/M done)" → "Done — N files converted"
+- [x] Save All button — picks a folder and saves all converted files as {name}.md in one step
+- [x] Keyboard shortcuts — Ctrl+O (add files), Ctrl+Enter (convert all)
+- [x] Copy / Save feedback — status bar confirms "Copied to clipboard" / "Saved → filename.md"
+
 ## Key build notes
 - Use `--console` (not `--windowed`) for PyInstaller on Python 3.14 — runw.exe bootloader hangs
 - Console window suppressed via `ShowWindow(GetConsoleWindow(), SW_HIDE)` in converter.py
