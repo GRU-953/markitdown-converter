@@ -116,3 +116,31 @@ class TestConvertBijoyToUnicode:
     def test_output_is_unicode_bengali(self):
         result = convert_bijoy_to_unicode("evsjv")
         assert all(0x0980 <= ord(c) <= 0x09FF or c == " " for c in result)
+
+    # ── Rearrangement edge-cases (composite vowels) ───────────────────────────
+
+    def test_composite_vowel_o(self):
+        # † = † → ে (e-sign),  K → ক,  v → া
+        # rearrangement: ে + ক + া → কো  (ো is e+aa composite)
+        result = convert_bijoy_to_unicode("†Kv")
+        assert result == "কো"
+
+    def test_composite_vowel_ou(self):
+        # † = † → ে,  K → ক,  Š = Š → ৗ
+        # rearrangement: ে + ক + ৗ → কৌ  (ৌ is e+ou composite)
+        result = convert_bijoy_to_unicode("†KŠ")
+        assert result == "কৌ"
+
+    def test_pre_kar_reorder_single(self):
+        # † → ে (pre-kar),  M → গ
+        # rearrangement: ে + গ → গে
+        result = convert_bijoy_to_unicode("†M")
+        assert result == "গে"
+
+    def test_reph_in_cluster(self):
+        # © (U+00A9) → র্  (reph),  K → ক,  g → ম
+        # K©g: ক + র্ + ম → rearrangement places reph; output is valid Bengali
+        result = convert_bijoy_to_unicode("K©g")
+        assert len(result) > 0
+        # all chars should be Bengali code points or punctuation
+        assert all(0x0980 <= ord(c) <= 0x09FF for c in result.strip())

@@ -4,7 +4,6 @@ Drag-drop batch conversion · OCR (EN+BN) · Bijoy→Unicode · Dark mode
 """
 
 import os
-import re
 import sys
 import threading
 from pathlib import Path
@@ -30,6 +29,7 @@ from tkinterdnd2 import DND_FILES, TkinterDnD
 import brand
 from bijoy_unicode import convert_bijoy_to_unicode, detect_script, is_bijoy
 from ocr_engine import LANG_CODES, ocr_image, tesseract_available
+from utils import parse_dnd_paths
 
 _mid = None
 
@@ -65,13 +65,6 @@ _STATUS_COLOR = {
     "done":    P("success"),
     "error":   P("error"),
 }
-
-
-def _parse_dnd_paths(raw: str) -> list:
-    paths = []
-    for item in re.findall(r'\{[^}]*\}|\S+', raw):
-        paths.append(item.strip("{}"))
-    return paths
 
 
 # ─────────────────────────────────────────────────────────── FileRow widget ──
@@ -554,7 +547,7 @@ class App(TkinterDnD.Tk):
     # ──────────────────────────────────────────── File list logic ─────────────
 
     def _on_drop(self, event):
-        for p in _parse_dnd_paths(event.data):
+        for p in parse_dnd_paths(event.data):
             self._add_path(p)
 
     def _add_files(self):
@@ -716,7 +709,7 @@ class App(TkinterDnD.Tk):
     # ──────────────────────────────────────────────────── OCR logic ──────────
 
     def _ocr_drop(self, event):
-        paths = _parse_dnd_paths(event.data)
+        paths = parse_dnd_paths(event.data)
         if paths:
             self._ocr_set(paths[0])
 

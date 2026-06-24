@@ -20,6 +20,7 @@ pyinstaller --noconfirm --onefile --console ^
   --add-data "bijoy_unicode.py;." ^
   --add-data "ocr_engine.py;." ^
   --add-data "brand.py;." ^
+  --add-data "utils.py;." ^
   --add-binary "%TESS%\tesseract.exe;tesseract" ^
   --add-data "%TESS%\tessdata\eng.traineddata;tesseract/tessdata" ^
   --add-data "%TESS%\tessdata\ben.traineddata;tesseract/tessdata" ^

@@ -23,14 +23,18 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install test dependencies
-        run: pip install pytest pytesseract Pillow
+        run: pip install pytest pytest-cov pytesseract Pillow
 
       - name: Syntax check (all Python files)
         run: |
           python -m py_compile bijoy_unicode.py
           python -m py_compile ocr_engine.py
           python -m py_compile brand.py
+          python -m py_compile utils.py
           python -m py_compile converter.py || true
 
-      - name: Run tests
-        run: pytest tests/ -v --tb=short
+      - name: Run tests with coverage
+        run: >-
+          pytest tests/ -v --tb=short
+          --cov=bijoy_unicode --cov=ocr_engine --cov=utils
+          --cov-report=term-missing
