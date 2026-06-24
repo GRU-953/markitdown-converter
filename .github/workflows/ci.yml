@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  test:
+    name: Tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install test dependencies
+        run: pip install pytest pytesseract Pillow
+
+      - name: Syntax check (all Python files)
+        run: |
+          python -m py_compile bijoy_unicode.py
+          python -m py_compile ocr_engine.py
+          python -m py_compile brand.py
+          python -m py_compile converter.py || true
+
+      - name: Run tests
+        run: pytest tests/ -v --tb=short

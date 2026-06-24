@@ -1,1 +1,9 @@
 ﻿.dev953/
+__pycache__/
+*.pyc
+*.pyo
+*.spec
+build/
+dist/
+assets/app_icon.ico
+.pytest_cache/
