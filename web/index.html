@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>MarkItDown Converter</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/3.2.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="vendor/tabler-icons/tabler-icons.min.css">
   <style>
     @font-face { font-family: "Figtree"; src: url("../assets/Figtree.ttf"); font-display: swap; }
     @font-face { font-family: "Hind Siliguri"; src: url("../assets/HindSiliguri-Regular.ttf"); font-weight: 400; }
@@ -39,6 +39,13 @@
           </div>
         </div>
       </header>
+
+      <div id="update-banner" class="update-banner" style="display:none">
+        <i class="ti ti-arrow-up-circle"></i>
+        <span id="update-msg">A new version is available.</span>
+        <a id="update-link" href="#" target="_blank" class="update-link">Download</a>
+        <button class="update-dismiss" onclick="this.parentElement.style.display='none'" title="Dismiss">×</button>
+      </div>
 
       <div class="content">
 

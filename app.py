@@ -10,6 +10,9 @@ This module owns the window and the Api bridge exposed to JavaScript as
 import os
 import sys
 import time
+import threading
+import urllib.request
+import json as _json
 from pathlib import Path
 
 # In the PyInstaller --onefile bundle, hide the console window immediately.
@@ -30,6 +33,9 @@ import settings as _settings
 from bijoy_unicode import convert_bijoy_to_unicode, detect_script
 from ocr_engine import ocr_image, tesseract_available
 from pipeline import convert_file, is_image
+
+APP_VERSION = "v4.1.0"
+_RELEASES_API = "https://api.github.com/repos/GRU-953/markitdown-converter/releases/latest"
 
 
 def _resource(rel: str) -> Path:
@@ -186,6 +192,28 @@ class Api:
         self._cfg["history"] = []
         _settings.save(self._cfg)
         return []
+
+    # ── updates ───────────────────────────────────────────────────────────────
+
+    def get_version(self) -> str:
+        return APP_VERSION
+
+    def check_update(self) -> dict:
+        """Query GitHub for the latest release. Returns {latest, url, has_update}."""
+        try:
+            req = urllib.request.Request(
+                _RELEASES_API,
+                headers={"Accept": "application/vnd.github+json",
+                         "User-Agent": f"MarkItDownConverter/{APP_VERSION}"},
+            )
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                data = _json.loads(resp.read().decode())
+            latest = data.get("tag_name", APP_VERSION)
+            url = data.get("html_url", "")
+            return {"latest": latest, "url": url,
+                    "has_update": latest != APP_VERSION}
+        except Exception:
+            return {"latest": APP_VERSION, "url": "", "has_update": False}
 
 
 def _render(text: str, ext: str) -> str:

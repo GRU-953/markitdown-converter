@@ -24,6 +24,21 @@ async function start() {
   wireHistory(); wireSettings();
   syncSettingsControls();
   renderFiles(); renderOutput();
+  checkForUpdate();
+}
+
+async function checkForUpdate() {
+  try {
+    const info = await api().check_update();
+    if (!info || !info.has_update) return;
+    const banner = document.getElementById("update-banner");
+    const msg = document.getElementById("update-msg");
+    const link = document.getElementById("update-link");
+    msg.textContent = `Update available: ${info.latest}`;
+    link.href = info.url;
+    link.onclick = (e) => { e.preventDefault(); window.open(info.url); };
+    banner.style.display = "flex";
+  } catch (e) {}
 }
 
 /* ── Theme + palette ──────────────────────────────────────────────────────── */

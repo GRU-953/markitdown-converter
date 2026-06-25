@@ -11,6 +11,8 @@ jobs:
     runs-on: windows-latest
     permissions:
       contents: write
+      id-token: write
+      attestations: write
 
     steps:
       - uses: actions/checkout@v4
@@ -101,9 +103,44 @@ jobs:
             throw "Bundled exe failed to convert sample.docx — a format dependency is missing from the build."
           }
 
-      - name: Create release and upload exe
+      - name: Build installer with Inno Setup
+        shell: pwsh
+        run: |
+          choco install innosetup -y --no-progress
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss
+          if (-not (Test-Path "dist\MarkItDownConverter-Setup.exe")) {
+            throw "Inno Setup build failed: installer not found"
+          }
+          $mb = [Math]::Round((Get-Item "dist\MarkItDownConverter-Setup.exe").Length / 1MB, 1)
+          Write-Output "Built: MarkItDownConverter-Setup.exe ($mb MB)"
+
+      - name: Generate SHA256 checksums
+        shell: pwsh
+        run: |
+          $files = @("dist\MarkItDownConverter.exe", "dist\MarkItDownConverter-Setup.exe")
+          $lines = $files | ForEach-Object {
+            $hash = (Get-FileHash $_ -Algorithm SHA256).Hash.ToLower()
+            "$hash  $(Split-Path $_ -Leaf)"
+          }
+          $lines | Out-File -FilePath "dist\SHA256SUMS.txt" -Encoding utf8
+          Get-Content "dist\SHA256SUMS.txt"
+
+      - name: Attest build provenance (installer)
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: dist/MarkItDownConverter-Setup.exe
+
+      - name: Attest build provenance (portable exe)
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: dist/MarkItDownConverter.exe
+
+      - name: Create release and upload artifacts
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/MarkItDownConverter.exe
+          files: |
+            dist/MarkItDownConverter-Setup.exe
+            dist/MarkItDownConverter.exe
+            dist/SHA256SUMS.txt
           generate_release_notes: true
           fail_on_unmatched_files: true
