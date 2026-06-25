@@ -108,6 +108,14 @@ function friendlyError(raw) {
     return "This file contains characters the converter couldn’t read. Try saving it as UTF-8.";
   if (r.includes("timeout") || r.includes("timed out"))
     return "Conversion took too long and was stopped. Try a smaller file.";
+  if (r.includes("unsupported format") || r.includes("no text can be extracted"))
+    return raw.replace(/^ValueError:\s*/i, "").split(/[\n\r]/)[0].trim();
+  if (r.includes("too large") || r.includes("maximum allowed size"))
+    return raw.replace(/^ValueError:\s*/i, "").split(/[\n\r]/)[0].trim();
+  if (r.includes("path is a directory"))
+    return "That path is a folder, not a file.";
+  if (r.includes("invalid file path"))
+    return "Invalid file path.";
   // Fallback: hide stack trace, show only first sentence
   const first = raw.split(/[\n\r]/)[0].replace(/^[A-Za-z]+Error:\s*/i, "").trim();
   return first.length > 120 ? first.slice(0, 117) + "…" : first || "Something went wrong.";
@@ -205,7 +213,11 @@ async function convertAll() {
 }
 function retryFailed() { convertAll(); }
 
-const STEP_LABEL = { markitdown: "MarkItDown", ocr: "OCR", bijoy: "Bijoy→Unicode" };
+const STEP_LABEL = {
+  markitdown: "MarkItDown", ocr: "OCR", bijoy: "Bijoy→Unicode",
+  doc_ole: "Binary Doc", pdf_ocr: "PDF OCR",
+  ocr_empty: "No text found", unsupported: "Unsupported format",
+};
 const STAT_ICON = { pending: "ti-circle", doing: "ti-loader-2", done: "ti-circle-check", error: "ti-alert-circle" };
 function renderFiles() {
   $("file-count").textContent = files.length;

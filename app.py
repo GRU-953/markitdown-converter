@@ -32,10 +32,36 @@ import webview
 import settings as _settings
 from bijoy_unicode import convert_bijoy_to_unicode, detect_script
 from ocr_engine import ocr_image, ocr_pdf, tesseract_available, pymupdf_available
-from pipeline import convert_file, is_image, is_pdf
+from pipeline import convert_file, is_image, is_pdf, is_legacy_doc
 
-APP_VERSION = "v4.2.2"
+APP_VERSION = "v4.3.0"
+MAX_FILE_BYTES = 200 * 1024 * 1024  # 200 MB hard limit
 _RELEASES_API = "https://api.github.com/repos/GRU-953/markitdown-converter/releases/latest"
+
+
+def _validate_path(path: str) -> None:
+    """
+    Raise ValueError on security violations before conversion.
+    Catches path traversal, missing files, and oversized inputs.
+    """
+    p = Path(path).resolve()
+    # Reject paths that escaped a common parent via traversal fragments
+    try:
+        p.relative_to(p.anchor)  # always true — real guard is the resolve() above
+    except ValueError:
+        pass
+    # Disallow names with traversal markers that survived resolve()
+    raw = str(path)
+    if ".." in raw.replace("\\", "/").split("/"):
+        raise ValueError("Invalid file path.")
+    if not p.exists():
+        raise FileNotFoundError(f"File not found: {path}")
+    if p.is_dir():
+        raise ValueError("Path is a directory, not a file.")
+    size = p.stat().st_size
+    if size > MAX_FILE_BYTES:
+        mb = size // (1024 * 1024)
+        raise ValueError(f"File is too large ({mb} MB). Maximum allowed size is 200 MB.")
 
 
 def _resource(rel: str) -> Path:
@@ -72,7 +98,7 @@ class Api:
     def pick_files(self) -> list:
         """Open the native file picker; return a list of {path, name}."""
         types = (
-            "Supported files (*.pdf;*.docx;*.xlsx;*.pptx;*.html;*.htm;*.csv;"
+            "Supported files (*.pdf;*.doc;*.docx;*.xlsx;*.pptx;*.html;*.htm;*.csv;"
             "*.json;*.xml;*.zip;*.png;*.jpg;*.jpeg;*.gif;*.bmp;*.tiff;*.wav;*.mp3)",
             "All files (*.*)",
         )
@@ -119,13 +145,15 @@ class Api:
         p = Path(path)
         _settings.add_recent(self._cfg, str(p))
         _settings.save(self._cfg)
-        return {"path": str(p), "name": p.name, "is_image": is_image(p)}
+        return {"path": str(p), "name": p.name, "is_image": is_image(p),
+                "is_doc": is_legacy_doc(p)}
 
     # ── conversion ──────────────────────────────────────────────────────────
 
     def convert(self, path: str) -> dict:
         """Run the unified pipeline on one file; never raises to the frontend."""
         try:
+            _validate_path(path)
             out = convert_file(
                 path,
                 auto_ocr=self._cfg.get("auto_ocr", True),
