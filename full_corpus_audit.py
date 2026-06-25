@@ -54,9 +54,17 @@ def _classify_file(f: pathlib.Path, auto_ocr: bool) -> dict:
 
 
 def _safe_convert(args):
-    f, auto_ocr = args
+    f, auto_ocr, file_timeout = args
     try:
-        return _classify_file(f, auto_ocr)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as inner:
+            fut = inner.submit(_classify_file, f, auto_ocr)
+            try:
+                return fut.result(timeout=file_timeout)
+            except concurrent.futures.TimeoutError:
+                return {"status": "FAIL", "ext": f.suffix.lower(),
+                        "kb": round(f.stat().st_size / 1024, 1), "elapsed": file_timeout,
+                        "steps": [], "words": 0, "file": str(f), "name": f.name,
+                        "error": f"Timeout after {file_timeout}s"}
     except Exception as exc:
         return {"status": "FAIL", "ext": f.suffix.lower(), "kb": 0, "elapsed": 0,
                 "steps": [], "words": 0, "file": str(f), "name": f.name,
@@ -68,6 +76,7 @@ def main():
     ap.add_argument("--no-ocr", action="store_true", help="Skip OCR (faster)")
     ap.add_argument("--workers", type=int, default=4, help="Parallel workers")
     ap.add_argument("--out", default="full_audit_results.json", help="JSON output path")
+    ap.add_argument("--file-timeout", type=int, default=30, help="Per-file timeout in seconds")
     args = ap.parse_args()
 
     auto_ocr = not args.no_ocr
@@ -91,9 +100,10 @@ def main():
     done = 0
     t_start = time.time()
 
+    file_timeout = args.file_timeout
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as pool:
-        futures = {pool.submit(_safe_convert, (f, auto_ocr)): f for f in all_files}
-        for fut in concurrent.futures.as_completed(futures, timeout=TIMEOUT_SEC * total):
+        futures = {pool.submit(_safe_convert, (f, auto_ocr, file_timeout)): f for f in all_files}
+        for fut in concurrent.futures.as_completed(futures, timeout=file_timeout * total + 120):
             r = fut.result()
             results.append(r)
             done += 1
