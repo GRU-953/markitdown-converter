@@ -31,8 +31,8 @@ import webview
 
 import settings as _settings
 from bijoy_unicode import convert_bijoy_to_unicode, detect_script
-from ocr_engine import ocr_image, tesseract_available
-from pipeline import convert_file, is_image
+from ocr_engine import ocr_image, ocr_pdf, tesseract_available, pymupdf_available
+from pipeline import convert_file, is_image, is_pdf
 
 APP_VERSION = "v4.1.0"
 _RELEASES_API = "https://api.github.com/repos/GRU-953/markitdown-converter/releases/latest"
@@ -91,6 +91,22 @@ class Api:
             return self._meta(result[0])
         return {}
 
+    def pick_scan_file(self) -> dict:
+        """Open picker for the Scan view — accepts images AND PDFs."""
+        types = (
+            "Images & PDFs (*.png;*.jpg;*.jpeg;*.bmp;*.tiff;*.gif;*.webp;*.pdf)",
+            "All files (*.*)",
+        )
+        result = self._window.create_file_dialog(
+            webview.FileDialog.OPEN, allow_multiple=False, file_types=types
+        )
+        if result:
+            p = Path(result[0])
+            _settings.add_recent(self._cfg, str(p))
+            _settings.save(self._cfg)
+            return {"path": str(p), "name": p.name, "is_pdf": is_pdf(p)}
+        return {}
+
     def add_dropped(self, paths: list) -> list:
         """Validate dropped paths (from the HTML5 drop handler)."""
         out = []
@@ -137,7 +153,12 @@ class Api:
         try:
             if not tesseract_available():
                 return {"ok": False, "error": "Tesseract OCR is not available."}
-            text = ocr_image(path, language)
+            if is_pdf(path):
+                if not pymupdf_available():
+                    return {"ok": False, "error": "PDF scanning requires pymupdf — run: pip install pymupdf"}
+                text = ocr_pdf(path, language)
+            else:
+                text = ocr_image(path, language)
             if auto_bijoy and text:
                 from bijoy_unicode import is_bijoy
                 if is_bijoy(text):
@@ -154,6 +175,9 @@ class Api:
 
     def tesseract_ok(self) -> bool:
         return tesseract_available()
+
+    def pymupdf_ok(self) -> bool:
+        return pymupdf_available()
 
     # ── export ────────────────────────────────────────────────────────────────
 

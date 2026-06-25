@@ -3,3 +3,4 @@ pywebview
 pytesseract
 Pillow
 markdown
+pymupdf>=1.24.0

@@ -58,9 +58,23 @@ class TestDocumentConversion:
     def test_none_text_content_becomes_empty(self, tmp_path):
         f = _touch(tmp_path, "doc.pdf")
         md = FakeMarkItDown(None)
-        out = convert_file(f, markitdown=md)
+        # Disable OCR fallback so we're testing only the MarkItDown-None path.
+        out = convert_file(f, markitdown=md, auto_ocr=False)
         assert out["text"] == ""
         assert out["steps"] == ["markitdown"]
+
+    def test_pdf_ocr_fallback_when_markitdown_empty(self, tmp_path):
+        f = _touch(tmp_path, "scan.pdf")
+        md = FakeMarkItDown(None)
+        # When MarkItDown returns empty and auto_ocr=True, pdf_ocr_func is called.
+        calls = {}
+        def fake_pdf_ocr(path, lang):
+            calls["path"] = path; calls["lang"] = lang
+            return "scanned text"
+        out = convert_file(f, markitdown=md, auto_ocr=True, ocr_pdf_func=fake_pdf_ocr)
+        assert out["text"] == "scanned text"
+        assert out["steps"] == ["pdf_ocr"]
+        assert calls["path"] == str(f)
 
 
 # ── image / OCR path ──────────────────────────────────────────────────────────

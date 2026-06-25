@@ -25,6 +25,23 @@ async function start() {
   syncSettingsControls();
   renderFiles(); renderOutput();
   checkForUpdate();
+  if (!cfg.onboarding_seen) showOnboarding();
+}
+
+function showOnboarding() {
+  const el = document.getElementById("onboard");
+  if (!el) return;
+  el.style.display = "flex";
+  document.getElementById("onboard-close").onclick = () => {
+    el.style.display = "none";
+    save({ onboarding_seen: true });
+  };
+  el.addEventListener("click", (e) => {
+    if (e.target === el) {
+      el.style.display = "none";
+      save({ onboarding_seen: true });
+    }
+  });
 }
 
 async function checkForUpdate() {
@@ -62,9 +79,9 @@ function save(patch) { Object.assign(cfg, patch); if (window.pywebview) api().sa
 
 /* ── Navigation ───────────────────────────────────────────────────────────── */
 const VIEW_META = {
-  convert:  ["Convert",  "Documents, images & spreadsheets → Markdown"],
-  ocr:      ["OCR",      "Extract text from images (English + Bengali)"],
-  bijoy:    ["Bijoy → Unicode", "Convert legacy SutonnyMJ text to Unicode"],
+  convert:  ["Convert",  "Drop any file — Word, PDF, spreadsheet, image — to extract its text"],
+  ocr:      ["Scan to text",  "Read text from a photo, scanned image, or image-only PDF"],
+  bijoy:    ["Bangla font converter", "Convert old Bijoy / SutonnyMJ text to proper Unicode Bangla"],
   history:  ["History",  "Your recent conversions"],
   settings: ["Settings", "Appearance & smart-conversion options"],
 };
@@ -246,26 +263,36 @@ async function exportAll() {
   else if (!res.cancelled) toast(res.error || "Export failed", "err");
 }
 
-/* ── OCR view ─────────────────────────────────────────────────────────────── */
+/* ── Scan (OCR) view ──────────────────────────────────────────────────────── */
 function wireOcr() {
   $("ocr-drop").addEventListener("click", pickOcr);
-  setupDrop($("ocr-drop"), pickOcr, (paths) => { if (paths[0]) setOcr({ path: paths[0], name: paths[0].split(/[\\/]/).pop() }); });
+  setupDrop($("ocr-drop"), pickOcr, (paths) => {
+    if (paths[0]) setOcr({ path: paths[0], name: paths[0].split(/[\\/]/).pop() });
+  });
   document.querySelectorAll("#ocr-lang button").forEach(b =>
     b.addEventListener("click", () => segPick("#ocr-lang", b)));
   $("ocr-run").addEventListener("click", runOcr);
   $("ocr-copy").addEventListener("click", () => copyText($("ocr-out").value));
-  $("ocr-export").addEventListener("click", () => saveText($("ocr-out").value, "ocr.txt"));
+  $("ocr-export").addEventListener("click", () => saveText($("ocr-out").value, "scanned.txt"));
 }
 async function pickOcr() {
-  try { const m = await api().pick_image(); if (m && m.path) setOcr(m); } catch (e) {}
+  try {
+    const m = await api().pick_scan_file();
+    if (m && m.path) setOcr(m);
+  } catch (e) {}
 }
-function setOcr(m) { ocrPath = m.path; $("ocr-file").textContent = m.name; }
+function setOcr(m) {
+  ocrPath = m.path;
+  const isPdf = m.is_pdf || (m.path || "").toLowerCase().endsWith(".pdf");
+  $("ocr-file").textContent = m.name + (isPdf ? " (PDF — will scan each page)" : "");
+}
 async function runOcr() {
-  if (!ocrPath) return toast("Choose an image first", "err");
+  if (!ocrPath) return toast("Choose an image or PDF first", "err");
   const lang = document.querySelector("#ocr-lang button.active").dataset.lang;
-  $("ocr-out").value = "Extracting…";
+  const isPdf = (ocrPath || "").toLowerCase().endsWith(".pdf");
+  $("ocr-out").value = isPdf ? "Scanning PDF pages… this may take a moment." : "Extracting text…";
   const res = await api().ocr(ocrPath, lang, $("ocr-bijoy").checked);
-  $("ocr-out").value = res.ok ? res.text : ("Error: " + res.error);
+  $("ocr-out").value = res.ok ? res.text : ("Could not extract text: " + res.error);
 }
 
 /* ── Bijoy view ───────────────────────────────────────────────────────────── */

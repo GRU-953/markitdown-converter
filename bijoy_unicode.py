@@ -443,7 +443,11 @@ def detect_script(text: str) -> str:
     total = bn + bj + la
     if total == 0:
         return "other"
-    if bj > 0:
+    # A real Bijoy/SutonnyMJ file has ZERO Unicode Bengali codepoints (U+0980–U+09FF).
+    # If any are present the text is already Unicode — common Word/PDF artefacts
+    # (em-dashes, curly quotes, ©, non-breaking spaces) fall in the bj range but
+    # are not Bijoy, so never classify as bijoy when Unicode Bengali is present.
+    if bj > 0 and bn == 0:
         return "bijoy"
     if bn > 0:
         return "unicode_bn"

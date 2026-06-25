@@ -25,6 +25,7 @@ python -m PyInstaller --noconfirm --onefile --windowed ^
   --collect-all clr_loader ^
   --collect-all magika ^
   --collect-all markitdown ^
+  --collect-all pymupdf ^
   --hidden-import clr ^
   --hidden-import bottle ^
   --hidden-import markdown ^

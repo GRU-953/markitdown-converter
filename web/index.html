@@ -19,10 +19,10 @@
     <!-- Sidebar -->
     <nav class="sidebar">
       <div class="brand-mark">M</div>
-      <button class="nav-btn active" data-view="convert" title="Convert"><i class="ti ti-transform"></i><span>Convert</span></button>
-      <button class="nav-btn" data-view="ocr" title="OCR"><i class="ti ti-scan"></i><span>OCR</span></button>
-      <button class="nav-btn" data-view="bijoy" title="Bijoy"><i class="ti ti-language"></i><span>Bijoy</span></button>
-      <button class="nav-btn" data-view="history" title="History"><i class="ti ti-history"></i><span>History</span></button>
+      <button class="nav-btn active" data-view="convert" title="Convert files"><i class="ti ti-transform"></i><span>Convert</span></button>
+      <button class="nav-btn" data-view="ocr" title="Scan image or PDF to text"><i class="ti ti-scan"></i><span>Scan</span></button>
+      <button class="nav-btn" data-view="bijoy" title="Convert old Bangla (Bijoy/SutonnyMJ) to Unicode"><i class="ti ti-language"></i><span>Bangla</span></button>
+      <button class="nav-btn" data-view="history" title="Conversion history"><i class="ti ti-history"></i><span>History</span></button>
       <div class="nav-spacer"></div>
       <button class="nav-btn" data-view="settings" title="Settings"><i class="ti ti-settings"></i><span>Settings</span></button>
     </nav>
@@ -96,24 +96,24 @@
           </div>
         </section>
 
-        <!-- ── OCR view ──────────────────────────────────────────────────── -->
+        <!-- ── Scan (OCR) view ───────────────────────────────────────────── -->
         <section class="view" id="view-ocr">
           <div class="stack">
             <div class="dropzone" id="ocr-drop" style="margin:0;">
-              <i class="ti ti-photo"></i>Drop an image, or click to browse
-              <div class="small" id="ocr-file">PNG · JPG · TIFF · BMP · WEBP</div>
+              <i class="ti ti-photo-scan"></i>Drop an image or PDF here, or click to browse
+              <div class="small" id="ocr-file">PNG · JPG · TIFF · BMP · WEBP · PDF</div>
             </div>
             <div class="row">
-              <span class="label">Language</span>
+              <span class="label">Language in the file</span>
               <div class="seg" id="ocr-lang">
                 <button data-lang="English" class="active">English</button>
                 <button data-lang="বাংলা">বাংলা</button>
                 <button data-lang="Both">Both</button>
               </div>
-              <label class="checkbox"><input type="checkbox" id="ocr-bijoy" checked> Auto Bijoy→Unicode</label>
+              <label class="checkbox"><input type="checkbox" id="ocr-bijoy" checked> Convert old Bangla font → Unicode</label>
               <button class="btn primary" id="ocr-run" style="margin-left:auto;"><i class="ti ti-scan"></i>Extract text</button>
             </div>
-            <textarea class="field" id="ocr-out" placeholder="Extracted text appears here…"></textarea>
+            <textarea class="field" id="ocr-out" placeholder="Extracted text will appear here…"></textarea>
             <div class="row">
               <button class="btn" id="ocr-copy"><i class="ti ti-copy"></i>Copy</button>
               <button class="btn" id="ocr-export"><i class="ti ti-download"></i>Save .txt</button>
@@ -124,14 +124,16 @@
         <!-- ── Bijoy view ────────────────────────────────────────────────── -->
         <section class="view" id="view-bijoy">
           <div class="stack">
-            <div class="row"><span class="label">Input — paste Bijoy / SutonnyMJ text</span>
-              <span class="detect-pill" id="bj-detect" style="margin-left:auto;">Type to auto-detect</span></div>
-            <textarea class="field" id="bj-in" placeholder="Avwg evsjvq wjwL…"></textarea>
             <div class="row">
-              <button class="btn primary" id="bj-run"><i class="ti ti-arrow-down"></i>Convert to Unicode</button>
+              <span class="label">Paste old Bangla text here (Bijoy / SutonnyMJ font)</span>
+              <span class="detect-pill" id="bj-detect" style="margin-left:auto;">Paste text to detect</span>
             </div>
-            <span class="label">Output — Unicode Bengali</span>
-            <textarea class="field" id="bj-out" placeholder="আউটপুট…" readonly></textarea>
+            <textarea class="field" id="bj-in" placeholder="Avwg evsjvq wjwL…  ← paste Bijoy-encoded text here"></textarea>
+            <div class="row">
+              <button class="btn primary" id="bj-run"><i class="ti ti-arrow-down"></i>Convert to proper Unicode Bangla</button>
+            </div>
+            <span class="label">Result — readable Unicode Bangla</span>
+            <textarea class="field" id="bj-out" placeholder="আমি বাংলায় লিখি… ← converted text appears here" readonly></textarea>
             <div class="row">
               <button class="btn" id="bj-copy"><i class="ti ti-copy"></i>Copy</button>
               <button class="btn" id="bj-export"><i class="ti ti-download"></i>Save .txt</button>
@@ -198,6 +200,39 @@
   </div>
 
   <div class="toast-wrap" id="toasts"></div>
+
+  <!-- ── First-run onboarding overlay ──────────────────────────────────── -->
+  <div class="onboard-backdrop" id="onboard" style="display:none" role="dialog" aria-modal="true">
+    <div class="onboard-card">
+      <div class="onboard-logo">M</div>
+      <h2 class="onboard-title">Welcome to MarkItDown Converter</h2>
+      <p class="onboard-sub">Turn any document into clean text — in three simple steps.</p>
+      <div class="onboard-steps">
+        <div class="onboard-step">
+          <div class="onboard-icon"><i class="ti ti-files"></i></div>
+          <div>
+            <strong>Drop your files</strong>
+            <p>Drag a Word document, PDF, spreadsheet, or image into the Convert tab — or click "Add files".</p>
+          </div>
+        </div>
+        <div class="onboard-step">
+          <div class="onboard-icon"><i class="ti ti-wand"></i></div>
+          <div>
+            <strong>One click converts</strong>
+            <p>Hit <em>Convert all</em>. The app reads the text, scans images automatically, and fixes old Bangla fonts.</p>
+          </div>
+        </div>
+        <div class="onboard-step">
+          <div class="onboard-icon"><i class="ti ti-download"></i></div>
+          <div>
+            <strong>Save or copy</strong>
+            <p>Export as Markdown, plain text, or HTML — or just copy straight to your clipboard.</p>
+          </div>
+        </div>
+      </div>
+      <button class="btn primary onboard-btn" id="onboard-close">Get started</button>
+    </div>
+  </div>
 
   <script src="js/vendor/marked.min.js"></script>
   <script src="js/app.js"></script>

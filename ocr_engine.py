@@ -75,10 +75,64 @@ def ocr_image(image_path: str, language: str = "English") -> str:
         raise RuntimeError(f"OCR failed: {exc}") from exc
 
 
+def ocr_pdf(pdf_path: str, language: str = "English", dpi: int = 200) -> str:
+    """
+    Render every page of a PDF to an image and OCR it.
+
+    Requires pymupdf (pip install pymupdf).  Falls back gracefully if not
+    installed.  Returns all pages joined by form-feed.
+    """
+    try:
+        import pymupdf  # type: ignore
+    except ImportError:
+        raise RuntimeError(
+            "PDF OCR requires pymupdf — run: pip install pymupdf"
+        )
+
+    path = Path(pdf_path)
+    if not path.exists():
+        raise FileNotFoundError(f"PDF not found: {pdf_path}")
+
+    lang_code = LANG_CODES.get(language, "eng")
+    zoom = dpi / 72  # pymupdf default DPI is 72
+    mat = pymupdf.Matrix(zoom, zoom)
+
+    pages_text = []
+    try:
+        doc = pymupdf.open(str(path))
+    except Exception as exc:
+        raise RuntimeError(f"Could not open PDF: {exc}") from exc
+
+    for page in doc:
+        pix = page.get_pixmap(matrix=mat, colorspace=pymupdf.csRGB)
+        img = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
+        try:
+            text = pytesseract.image_to_string(img, lang=lang_code)
+            pages_text.append(text.strip())
+        except pytesseract.TesseractNotFoundError:
+            raise RuntimeError(
+                "Tesseract not found. Install from https://github.com/UB-Mannheim/tesseract/wiki"
+            )
+        except Exception as exc:
+            raise RuntimeError(f"OCR failed on page {page.number + 1}: {exc}") from exc
+
+    doc.close()
+    return "\n\n".join(p for p in pages_text if p)
+
+
 def tesseract_available() -> bool:
     """Return True if Tesseract binary is reachable."""
     try:
         pytesseract.get_tesseract_version()
         return True
     except Exception:
+        return False
+
+
+def pymupdf_available() -> bool:
+    """Return True if pymupdf is installed (needed for PDF OCR)."""
+    try:
+        import pymupdf  # noqa: F401
+        return True
+    except ImportError:
         return False

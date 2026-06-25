@@ -20,6 +20,7 @@ _DEFAULTS: dict = {
     "last_output_folder": "",
     "recent_files": [],
     "history": [],              # list of {name, path, ts, steps, ok}
+    "onboarding_seen": False,   # show welcome overlay on first launch
 }
 
 
