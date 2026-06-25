@@ -70,10 +70,17 @@ jobs:
             --collect-all webview `
             --collect-all clr_loader `
             --collect-all magika `
+            --collect-all markitdown `
             --hidden-import clr `
             --hidden-import bottle `
             --hidden-import markdown `
             --hidden-import pytesseract `
+            --hidden-import mammoth `
+            --hidden-import openpyxl `
+            --hidden-import pptx `
+            --hidden-import xlrd `
+            --hidden-import pdfminer `
+            --hidden-import olefile `
             app.py
 
       - name: Verify exe
@@ -83,6 +90,16 @@ jobs:
           if (-not (Test-Path $exe)) { throw "Build failed: exe not found" }
           $mb = [Math]::Round((Get-Item $exe).Length / 1MB, 1)
           Write-Output "Built: MarkItDownConverter.exe ($mb MB)"
+
+      - name: Smoke-test bundled converters
+        shell: pwsh
+        run: |
+          .\dist\MarkItDownConverter.exe --selftest "tests/fixtures/sample.docx" > selftest.txt 2>&1
+          $out = Get-Content selftest.txt -Raw
+          Write-Output $out
+          if ($out -notmatch "SELFTEST_OK") {
+            throw "Bundled exe failed to convert sample.docx — a format dependency is missing from the build."
+          }
 
       - name: Create release and upload exe
         uses: softprops/action-gh-release@v2

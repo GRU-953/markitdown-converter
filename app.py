@@ -202,7 +202,25 @@ def _render(text: str, ext: str) -> str:
     return text   # md / txt are written as-is
 
 
+def _selftest(path: str) -> int:
+    """Headless conversion check — used to smoke-test the frozen bundle.
+    Writes the result to stdout so a redirected launch can capture it."""
+    try:
+        from pipeline import convert_file
+        out = convert_file(path)
+        sys.stdout.write(f"SELFTEST_OK steps={out['steps']} text={out['text'][:60]!r}\n")
+        sys.stdout.flush()
+        return 0
+    except Exception as exc:
+        sys.stdout.write(f"SELFTEST_FAIL {type(exc).__name__}: {exc}\n")
+        sys.stdout.flush()
+        return 1
+
+
 def main():
+    if len(sys.argv) >= 3 and sys.argv[1] == "--selftest":
+        sys.exit(_selftest(sys.argv[2]))
+
     api = Api()
     cfg = api.get_config()
     bg = "#0F1020" if cfg.get("theme") != "Light" else "#FFFFFF"

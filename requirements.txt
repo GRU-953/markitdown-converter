@@ -1,4 +1,4 @@
-markitdown
+markitdown[docx,pptx,xlsx,xls,pdf,outlook]>=0.1.6
 pywebview
 pytesseract
 Pillow

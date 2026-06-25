@@ -24,9 +24,16 @@ python -m PyInstaller --noconfirm --onefile --console ^
   --collect-all webview ^
   --collect-all clr_loader ^
   --collect-all magika ^
+  --collect-all markitdown ^
   --hidden-import clr ^
   --hidden-import bottle ^
   --hidden-import markdown ^
+  --hidden-import mammoth ^
+  --hidden-import openpyxl ^
+  --hidden-import pptx ^
+  --hidden-import xlrd ^
+  --hidden-import pdfminer ^
+  --hidden-import olefile ^
   app.py
 
 echo [4/4] Done.
