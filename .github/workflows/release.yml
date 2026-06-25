@@ -21,7 +21,7 @@ jobs:
           cache: pip
 
       - name: Install Python dependencies
-        run: pip install -r requirements.txt pyinstaller
+        run: pip install -r requirements.txt pyinstaller pytest pytest-cov
 
       - name: Run tests
         run: python -m pytest tests/ -v --tb=short
