@@ -1,6 +1,6 @@
 [Setup]
 AppName=MarkItDown Converter
-AppVersion=4.2.0
+AppVersion=4.2.2
 AppPublisher=GRU-953
 AppPublisherURL=https://github.com/GRU-953/markitdown-converter
 AppSupportURL=https://github.com/GRU-953/markitdown-converter/issues
@@ -18,7 +18,7 @@ WizardStyle=modern
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
 UninstallDisplayIcon={app}\MarkItDownConverter.exe
-VersionInfoVersion=4.2.0
+VersionInfoVersion=4.2.2
 VersionInfoDescription=MarkItDown Converter Setup
 VersionInfoCopyright=Copyright (C) 2024-2026 GRU-953
 

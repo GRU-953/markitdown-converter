@@ -34,7 +34,7 @@ from bijoy_unicode import convert_bijoy_to_unicode, detect_script
 from ocr_engine import ocr_image, ocr_pdf, tesseract_available, pymupdf_available
 from pipeline import convert_file, is_image, is_pdf
 
-APP_VERSION = "v4.2.0"
+APP_VERSION = "v4.2.2"
 _RELEASES_API = "https://api.github.com/repos/GRU-953/markitdown-converter/releases/latest"
 
 

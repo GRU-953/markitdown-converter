@@ -112,15 +112,7 @@ jobs:
       - name: Create PDF smoke-test fixture
         shell: pwsh
         run: |
-          python -c "
-import pymupdf
-doc = pymupdf.open()
-page = doc.new_page()
-page.insert_text((50, 100), 'MarkItDown Converter PDF smoke test', fontsize=14)
-doc.save('tests/fixtures/sample.pdf')
-doc.close()
-print('Created sample.pdf')
-"
+          python -c "import pymupdf; doc=pymupdf.open(); p=doc.new_page(); p.insert_text((50,100),'MarkItDown Converter smoke test',fontsize=14); doc.save('tests/fixtures/sample.pdf'); doc.close(); print('Created sample.pdf')"
 
       - name: Smoke-test bundled converters
         shell: pwsh
