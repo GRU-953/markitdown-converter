@@ -26,6 +26,7 @@ from ocr_engine import ocr_image, ocr_pdf
 IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".bmp", ".tiff", ".tif", ".gif", ".webp"}
 PDF_EXT = ".pdf"
 DOC_EXT = ".doc"
+RTF_EXT = ".rtf"
 # Formats that contain no text — return a friendly error instead of a cryptic one
 UNSUPPORTED_EXTS = {
     ".eps", ".ai",          # PostScript / Illustrator vector
@@ -34,7 +35,14 @@ UNSUPPORTED_EXTS = {
     ".pfb", ".pfm",         # PostScript fonts
     ".woff", ".woff2",      # Web fonts
     ".psd",                 # Photoshop (binary layers, no plain text)
+    ".odt", ".ods", ".odp", ".odg",  # OpenDocument — save as .docx/.pdf first
 }
+
+try:
+    from striprtf.striprtf import rtf_to_text as _rtf_to_text
+    _STRIPRTF_AVAILABLE = True
+except ImportError:
+    _STRIPRTF_AVAILABLE = False
 
 _mid = None
 
@@ -156,6 +164,11 @@ def is_legacy_doc(path) -> bool:
     return Path(path).suffix.lower() == DOC_EXT
 
 
+def is_rtf(path) -> bool:
+    """Return True if *path* is an RTF file."""
+    return Path(path).suffix.lower() == RTF_EXT
+
+
 def is_unsupported(path) -> bool:
     """Return True if *path* has an extension that can never yield text."""
     return Path(path).suffix.lower() in UNSUPPORTED_EXTS
@@ -204,7 +217,10 @@ def convert_file(
 
     steps = []
 
-    if auto_ocr and is_image(p):
+    if not auto_ocr and is_image(p):
+        # B-4: image with OCR disabled — nothing to extract
+        return {"text": "", "steps": ["image_ocr_disabled"]}
+    elif auto_ocr and is_image(p):
         runner = ocr_func or ocr_image
         text = runner(str(p), ocr_lang)
         steps.append("ocr")
@@ -221,6 +237,9 @@ def convert_file(
             pdf_runner = ocr_pdf_func or ocr_pdf
             text = pdf_runner(str(p), ocr_lang)
             steps = ["pdf_ocr"]
+        # E-2: PDF with no text and OCR disabled (or OCR also returned empty)
+        elif not text.strip() and "pdf_ocr" not in steps:
+            steps.append("pdf_empty")
     elif is_legacy_doc(p):
         # Try OLE binary extraction first (handles Word 97-2003 ANSI/Bijoy docs)
         text = _extract_legacy_doc(str(p))
@@ -235,6 +254,27 @@ def convert_file(
                 steps.append("markitdown")
             except Exception:
                 text = ""
+        # E-1: .doc produced no text from either path
+        if not text.strip():
+            steps.append("doc_empty")
+    elif is_rtf(p):
+        # RTF: try striprtf first, fall back to MarkItDown
+        text = ""
+        if _STRIPRTF_AVAILABLE:
+            try:
+                raw_rtf = p.read_bytes().decode("cp1252", errors="replace")
+                text = _rtf_to_text(raw_rtf)
+            except Exception:
+                text = ""
+        if not text.strip():
+            # Fall back to MarkItDown
+            try:
+                md = markitdown or _get_markitdown()
+                result = md.convert(str(p))
+                text = result.text_content or ""
+            except Exception:
+                text = ""
+        steps.append("rtf")
     else:
         md = markitdown or _get_markitdown()
         result = md.convert(str(p))

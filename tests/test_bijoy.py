@@ -21,11 +21,16 @@ from bijoy_unicode import convert_bijoy_to_unicode, detect_script, is_bijoy, _re
 
 class TestDetectScript:
     def test_bijoy_indicator_char(self):
-        # 0xB0 ("°") is in the Bijoy detection range (0x00A0-0x00FF)
-        assert detect_script("°") == "bijoy"
+        # A single "°" (U+00B0) is in the Bijoy range but bj < 5 threshold; not enough to classify
+        assert detect_script("°") == "latin"
 
     def test_bijoy_indicator_wins_over_latin(self):
-        assert detect_script("° Hello") == "bijoy"
+        # One bj char among Latin letters is below the 5-char minimum — not Bijoy
+        assert detect_script("° Hello") == "latin"
+
+    def test_bijoy_five_chars_classified(self):
+        # Five Bijoy-range chars with no ASCII letters and no Bengali Unicode → bijoy
+        assert detect_script("°°°°°") == "bijoy"
 
     def test_unicode_bengali(self):
         assert detect_script("আমি বাংলায় লিখি") == "unicode_bn"
@@ -49,8 +54,12 @@ class TestDetectScript:
 # ── is_bijoy ──────────────────────────────────────────────────────────────────
 
 class TestIsBijoy:
-    def test_bijoy_char_true(self):
-        assert is_bijoy("°") is True
+    def test_bijoy_single_char_false(self):
+        # A single Bijoy-range char is below the 5-char minimum; not enough to classify as Bijoy
+        assert is_bijoy("°") is False
+
+    def test_bijoy_five_chars_true(self):
+        assert is_bijoy("°°°°°") is True
 
     def test_unicode_bengali_false(self):
         assert is_bijoy("আমি") is False

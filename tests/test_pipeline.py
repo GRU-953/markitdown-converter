@@ -11,7 +11,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import pipeline
-from pipeline import convert_file, is_image
+from pipeline import convert_file, is_image, is_legacy_doc, is_unsupported
 
 
 # ── fakes ───────────────────────────────────────────────────────────────────
@@ -59,9 +59,11 @@ class TestDocumentConversion:
         f = _touch(tmp_path, "doc.pdf")
         md = FakeMarkItDown(None)
         # Disable OCR fallback so we're testing only the MarkItDown-None path.
+        # When MarkItDown returns nothing and OCR is off, pdf_empty step is added.
         out = convert_file(f, markitdown=md, auto_ocr=False)
         assert out["text"] == ""
-        assert out["steps"] == ["markitdown"]
+        assert "markitdown" in out["steps"]
+        assert "pdf_empty" in out["steps"]
 
     def test_pdf_ocr_fallback_when_markitdown_empty(self, tmp_path):
         f = _touch(tmp_path, "scan.pdf")
@@ -93,12 +95,12 @@ class TestImageConversion:
         assert out["steps"] == ["ocr"]
         assert captured == {"path": f, "lang": "Both"}
 
-    def test_auto_ocr_disabled_falls_back_to_markitdown(self, tmp_path):
+    def test_auto_ocr_disabled_returns_image_ocr_disabled_step(self, tmp_path):
         f = _touch(tmp_path, "scan.png")
         md = FakeMarkItDown("from markitdown")
         out = convert_file(f, auto_ocr=False, markitdown=md)
-        assert out["text"] == "from markitdown"
-        assert out["steps"] == ["markitdown"]
+        assert out["text"] == ""
+        assert out["steps"] == ["image_ocr_disabled"]
 
 
 # ── Bijoy post-step ───────────────────────────────────────────────────────────
@@ -186,3 +188,65 @@ class TestErrors:
         b = pipeline._get_markitdown()
         assert a is b
         assert len(created) == 1
+
+
+# ── T-1: is_legacy_doc + .doc empty step ──────────────────────────────────────
+
+class TestLegacyDoc:
+    def test_is_legacy_doc_true(self):
+        assert is_legacy_doc("report.doc") is True
+
+    def test_is_legacy_doc_false(self):
+        assert is_legacy_doc("report.docx") is False
+
+    def test_doc_empty_step(self, tmp_path, monkeypatch):
+        """When both OLE extraction and MarkItDown return empty, 'doc_empty' must appear."""
+        f = _touch(tmp_path, "old.doc")
+
+        # OLE extraction always returns "" for this fake file
+        monkeypatch.setattr(pipeline, "_extract_legacy_doc", lambda path: "")
+
+        # MarkItDown also returns empty
+        md = FakeMarkItDown("")
+        out = convert_file(str(f), markitdown=md)
+
+        assert "doc_empty" in out["steps"]
+        assert out["text"] == ""
+
+
+# ── T-2: is_unsupported + ValueError ─────────────────────────────────────────
+
+class TestUnsupported:
+    def test_is_unsupported_otf(self):
+        assert is_unsupported("font.otf") is True
+
+    def test_is_unsupported_docx(self):
+        assert is_unsupported("doc.docx") is False
+
+    @pytest.mark.parametrize("name", ["graphic.eps", "icon.otf", "typeface.ttf", "layout.indd"])
+    def test_convert_unsupported_raises(self, tmp_path, name):
+        f = _touch(tmp_path, name)
+        with pytest.raises(ValueError, match="(?i)unsupported format"):
+            convert_file(str(f))
+
+
+# ── T-4: ocr_empty step ───────────────────────────────────────────────────────
+
+class TestOcrEmpty:
+    def test_ocr_empty_step(self, tmp_path):
+        """When ocr_func returns empty string, 'ocr_empty' must appear in steps."""
+        f = _touch(tmp_path, "blank.png")
+        out = convert_file(str(f), ocr_func=lambda path, lang: "")
+        assert "ocr_empty" in out["steps"]
+        assert out["text"] == ""
+
+
+# ── image_ocr_disabled (standalone) ──────────────────────────────────────────
+
+class TestImageOcrDisabled:
+    def test_image_ocr_disabled(self, tmp_path):
+        """When auto_ocr=False and path is an image, steps must contain 'image_ocr_disabled'."""
+        f = _touch(tmp_path, "photo.jpg")
+        out = convert_file(str(f), auto_ocr=False)
+        assert out["steps"] == ["image_ocr_disabled"]
+        assert out["text"] == ""

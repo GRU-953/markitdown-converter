@@ -92,7 +92,7 @@ function friendlyError(raw) {
   const r = raw.toLowerCase();
   if (r.includes("file not found") || r.includes("no such file"))
     return "File not found. It may have been moved or deleted.";
-  if (r.includes("missingdependencyexception") || r.includes("dependencies needed to read"))
+  if (r.includes("missingdependency"))
     return "This file type isn’t supported. Try converting it to PDF or .docx first.";
   if (r.includes("tesseract not found"))
     return "Text scanning (OCR) is unavailable — please reinstall the app.";
@@ -215,8 +215,10 @@ function retryFailed() { convertAll(); }
 
 const STEP_LABEL = {
   markitdown: "MarkItDown", ocr: "OCR", bijoy: "Bijoy→Unicode",
-  doc_ole: "Binary Doc", pdf_ocr: "PDF OCR",
+  doc_ole: "Legacy Word (.doc)", pdf_ocr: "PDF OCR",
   ocr_empty: "No text found", unsupported: "Unsupported format",
+  doc_empty: "No text in doc", pdf_empty: "No text in PDF",
+  image_ocr_disabled: "OCR disabled", rtf: "RTF extract",
 };
 const STAT_ICON = { pending: "ti-circle", doing: "ti-loader-2", done: "ti-circle-check", error: "ti-alert-circle" };
 function renderFiles() {

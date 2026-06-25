@@ -103,20 +103,21 @@ def ocr_pdf(pdf_path: str, language: str = "English", dpi: int = 200) -> str:
     except Exception as exc:
         raise RuntimeError(f"Could not open PDF: {exc}") from exc
 
-    for page in doc:
-        pix = page.get_pixmap(matrix=mat, colorspace=pymupdf.csRGB)
-        img = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
-        try:
-            text = pytesseract.image_to_string(img, lang=lang_code)
-            pages_text.append(text.strip())
-        except pytesseract.TesseractNotFoundError:
-            raise RuntimeError(
-                "Tesseract not found. Install from https://github.com/UB-Mannheim/tesseract/wiki"
-            )
-        except Exception as exc:
-            raise RuntimeError(f"OCR failed on page {page.number + 1}: {exc}") from exc
-
-    doc.close()
+    try:
+        for page in doc:
+            pix = page.get_pixmap(matrix=mat, colorspace=pymupdf.csRGB)
+            img = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
+            try:
+                text = pytesseract.image_to_string(img, lang=lang_code)
+                pages_text.append(text.strip())
+            except pytesseract.TesseractNotFoundError:
+                raise RuntimeError(
+                    "Tesseract not found. Install from https://github.com/UB-Mannheim/tesseract/wiki"
+                )
+            except Exception as exc:
+                raise RuntimeError(f"OCR failed on page {page.number + 1}: {exc}") from exc
+    finally:
+        doc.close()
     return "\n\n".join(p for p in pages_text if p)
 
 

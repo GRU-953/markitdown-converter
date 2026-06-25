@@ -448,7 +448,7 @@ def detect_script(text: str) -> str:
     # English documents may have a few em-dashes/curly-quotes/© that fall in the bj range
     # but are NOT Bijoy; require bj to be at least 10 % of the Latin ASCII count so that
     # incidental punctuation in English text never triggers a false bijoy classification.
-    if bj > 0 and bn == 0 and bj * 10 >= la:
+    if bj >= 5 and bn == 0 and (la == 0 or bj * 10 >= la):
         return "bijoy"
     if bn > 0:
         return "unicode_bn"

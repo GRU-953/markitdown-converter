@@ -34,7 +34,7 @@ from bijoy_unicode import convert_bijoy_to_unicode, detect_script
 from ocr_engine import ocr_image, ocr_pdf, tesseract_available, pymupdf_available
 from pipeline import convert_file, is_image, is_pdf, is_legacy_doc
 
-APP_VERSION = "v4.3.0"
+APP_VERSION = "v4.4.0"
 MAX_FILE_BYTES = 200 * 1024 * 1024  # 200 MB hard limit
 _RELEASES_API = "https://api.github.com/repos/GRU-953/markitdown-converter/releases/latest"
 
@@ -56,6 +56,8 @@ def _validate_path(path: str) -> None:
         raise ValueError("Invalid file path.")
     if not p.exists():
         raise FileNotFoundError(f"File not found: {path}")
+    if p.is_symlink():
+        raise ValueError("Symlink paths are not permitted.")
     if p.is_dir():
         raise ValueError("Path is a directory, not a file.")
     size = p.stat().st_size
@@ -98,8 +100,8 @@ class Api:
     def pick_files(self) -> list:
         """Open the native file picker; return a list of {path, name}."""
         types = (
-            "Supported files (*.pdf;*.doc;*.docx;*.xlsx;*.pptx;*.html;*.htm;*.csv;"
-            "*.json;*.xml;*.zip;*.png;*.jpg;*.jpeg;*.gif;*.bmp;*.tiff;*.wav;*.mp3)",
+            "Supported files (*.pdf;*.doc;*.docx;*.rtf;*.xlsx;*.pptx;*.html;*.htm;*.csv;"
+            "*.json;*.xml;*.zip;*.png;*.jpg;*.jpeg;*.gif;*.bmp;*.tif;*.tiff;*.webp;*.wav;*.mp3)",
             "All files (*.*)",
         )
         result = self._window.create_file_dialog(
@@ -179,6 +181,7 @@ class Api:
 
     def ocr(self, path: str, language: str, auto_bijoy: bool) -> dict:
         try:
+            _validate_path(path)
             if not tesseract_available():
                 return {"ok": False, "error": "Tesseract OCR is not available."}
             if is_pdf(path):
