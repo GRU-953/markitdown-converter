@@ -4,6 +4,13 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.10] — 2026-06-26
+
+### Improved — README keyboard shortcuts
+- Added a "Are there keyboard shortcuts?" FAQ entry documenting Ctrl+Enter (convert all), Ctrl+O (open files), and Arrow Up/Down (navigate file list).
+
+---
+
 ## [v4.10.9] — 2026-06-26
 
 ### Improved — file list keyboard navigation
