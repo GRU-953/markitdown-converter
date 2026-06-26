@@ -4,6 +4,20 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.70] — 2026-06-27
+
+### Tests — malformed-XML and XLSX MemoryError branches (339 total, up from 335)
+
+Four new tests covering the `except Exception: pass` exception-silencing paths in font detection
+and the XLSX MemoryError fallback distinction:
+
+- `TestDocxFontDetection` (1): valid DOCX ZIP but malformed `word/document.xml` → `ET.fromstring` raises → caught → `False`
+- `TestPptxFontDetection` (1): valid PPTX ZIP but malformed `ppt/slides/slide1.xml` → `ET.fromstring` raises → caught → `False`
+- `TestXlsxFontDetection` (1): valid XLSX ZIP but malformed `xl/styles.xml` → `ET.fromstring` raises → caught → `False`
+- `TestXlsx` (1): real `MemoryError` from MarkItDown in the XLSX branch is caught by `except Exception` and falls back to `xlsx_direct` — NOT re-raised as `ValueError` like the generic and PDF branches
+
+---
+
 ## [v4.10.69] — 2026-06-27
 
 ### Tests — attribute-guard and cp0 boundary branches (335 total, up from 331)

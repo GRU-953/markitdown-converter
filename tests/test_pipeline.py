@@ -559,6 +559,21 @@ class TestXlsx:
         assert "xlsx_direct" in out["steps"]
         assert out["text"] == "row1 | col1\nrow2 | col2"
 
+    def test_xlsx_real_memory_error_falls_back_to_direct_not_valueerror(self, tmp_path, monkeypatch):
+        """Real MemoryError in the XLSX MarkItDown path is caught by 'except Exception' and falls
+        back to xlsx_direct — NOT re-raised as ValueError like in the generic/PDF branches."""
+        f = tmp_path / "oom.xlsx"
+        f.write_bytes(b"dummy")
+
+        class OOMMarkItDown:
+            def convert(self, path):
+                raise MemoryError("RAM exhausted")
+
+        monkeypatch.setattr(pipeline, "_extract_xlsx_direct", lambda path: "fallback data")
+        out = convert_file(str(f), markitdown=OOMMarkItDown())
+        assert "xlsx_direct" in out["steps"]
+        assert out["text"] == "fallback data"
+
     def test_xlsx_large_bypasses_markitdown(self, tmp_path, monkeypatch):
         """XLSX >= 2 MB must use xlsx_direct without calling MarkItDown at all."""
         f = tmp_path / "big.xlsx"
@@ -1426,6 +1441,15 @@ class TestDocxFontDetection:
             z.writestr("word/document.xml", xml)
         assert _docx_font_has_bijoy(str(docx_path)) is True
 
+    def test_malformed_xml_in_docx_returns_false(self, tmp_path):
+        """Valid DOCX ZIP but word/document.xml contains malformed XML → ET.fromstring raises
+        → caught by 'except Exception: pass' → function returns False."""
+        import zipfile
+        docx_path = tmp_path / "malformed.docx"
+        with zipfile.ZipFile(str(docx_path), "w") as z:
+            z.writestr("word/document.xml", b"<this is not valid xml!!!>>")
+        assert _docx_font_has_bijoy(str(docx_path)) is False
+
 
 # ── RTF font-name Bijoy detection ─────────────────────────────────────────────
 
@@ -1741,6 +1765,15 @@ class TestPptxFontDetection:
         )
         with zipfile.ZipFile(str(pptx_path), "w") as z:
             z.writestr("ppt/slides/slide1.xml", xml)
+        assert _pptx_font_has_bijoy(str(pptx_path)) is False
+
+    def test_malformed_xml_in_slide_returns_false(self, tmp_path):
+        """Valid PPTX ZIP but ppt/slides/slide1.xml is malformed → ET.fromstring raises
+        → caught by 'except Exception: pass' → returns False."""
+        import zipfile
+        pptx_path = tmp_path / "malformed.pptx"
+        with zipfile.ZipFile(str(pptx_path), "w") as z:
+            z.writestr("ppt/slides/slide1.xml", b"<broken xml <<<")
         assert _pptx_font_has_bijoy(str(pptx_path)) is False
 
 
@@ -2095,3 +2128,12 @@ class TestXlsxFontDetection:
         with zipfile.ZipFile(str(xlsx_path), "w") as z:
             z.writestr("xl/styles.xml", xml)
         assert _xlsx_font_has_bijoy(str(xlsx_path)) is True
+
+    def test_malformed_styles_xml_returns_false(self, tmp_path):
+        """Valid XLSX ZIP but xl/styles.xml is malformed → ET.fromstring raises
+        → caught by 'except Exception: pass' → returns False."""
+        import zipfile
+        xlsx_path = tmp_path / "malformed.xlsx"
+        with zipfile.ZipFile(str(xlsx_path), "w") as z:
+            z.writestr("xl/styles.xml", b"<not valid xml <<<>>>")
+        assert _xlsx_font_has_bijoy(str(xlsx_path)) is False
