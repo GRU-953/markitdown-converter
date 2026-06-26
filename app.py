@@ -34,7 +34,7 @@ from bijoy_unicode import convert_bijoy_to_unicode, detect_script
 from ocr_engine import ocr_image, ocr_pdf, tesseract_available, pymupdf_available
 from pipeline import convert_file, is_image, is_pdf, is_legacy_doc
 
-APP_VERSION = "v4.6.0"
+APP_VERSION = "v4.7.0"
 MAX_FILE_BYTES = 200 * 1024 * 1024  # 200 MB hard limit
 _RELEASES_API = "https://api.github.com/repos/GRU-953/gru953-markdown/releases/latest"
 
@@ -101,9 +101,15 @@ class Api:
             "*.json;*.xml;*.zip;*.png;*.jpg;*.jpeg;*.gif;*.bmp;*.tif;*.tiff;*.webp;*.wav;*.mp3)",
             "All files (*.*)",
         )
+        init_dir = self._cfg.get("last_input_folder") or ""
         result = self._window.create_file_dialog(
-            webview.FileDialog.OPEN, allow_multiple=True, file_types=types
+            webview.FileDialog.OPEN, allow_multiple=True, file_types=types,
+            directory=init_dir,
         )
+        if result:
+            folder = str(Path(result[0]).parent)
+            self._cfg["last_input_folder"] = folder
+            _settings.save(self._cfg)
         return [self._meta(p) for p in (result or [])]
 
     def pick_image(self) -> dict:
@@ -122,10 +128,15 @@ class Api:
             "Images & PDFs (*.png;*.jpg;*.jpeg;*.bmp;*.tiff;*.gif;*.webp;*.pdf)",
             "All files (*.*)",
         )
+        init_dir = self._cfg.get("last_input_folder") or ""
         result = self._window.create_file_dialog(
-            webview.FileDialog.OPEN, allow_multiple=False, file_types=types
+            webview.FileDialog.OPEN, allow_multiple=False, file_types=types,
+            directory=init_dir,
         )
         if result:
+            folder = str(Path(result[0]).parent)
+            self._cfg["last_input_folder"] = folder
+            _settings.save(self._cfg)
             p = Path(result[0])
             _settings.add_recent(self._cfg, str(p))
             _settings.save(self._cfg)
@@ -145,7 +156,7 @@ class Api:
         _settings.add_recent(self._cfg, str(p))
         _settings.save(self._cfg)
         return {"path": str(p), "name": p.name, "is_image": is_image(p),
-                "is_doc": is_legacy_doc(p)}
+                "is_doc": is_legacy_doc(p), "size": p.stat().st_size}
 
     # ── conversion ──────────────────────────────────────────────────────────
 

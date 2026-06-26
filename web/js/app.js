@@ -93,19 +93,19 @@ function friendlyError(raw) {
   if (r.includes("file not found") || r.includes("no such file"))
     return "File not found. It may have been moved or deleted.";
   if (r.includes("missingdependency"))
-    return "This file type isn’t supported. Try converting it to PDF or .docx first.";
+    return "This file type isn't supported. Try converting it to PDF or .docx first.";
   if (r.includes("tesseract not found"))
     return "Text scanning (OCR) is unavailable — please reinstall the app.";
   if (r.includes("pdf ocr requires pymupdf") || r.includes("no module named 'pymupdf'"))
-    return "PDF scanning requires a library that isn’t installed. Try reinstalling the app.";
+    return "PDF scanning requires a library that isn't installed. Try reinstalling the app.";
   if (r.includes("failed to open") || r.includes("could not open pdf"))
-    return "This PDF couldn’t be opened. It may be damaged or password-protected.";
+    return "This PDF couldn't be opened. It may be damaged or password-protected.";
   if (r.includes("ocr failed") || r.includes("image_to_string"))
-    return "Couldn’t read text from this image. Try a clearer photo or a different file.";
+    return "Couldn't read text from this image. Try a clearer photo or a different file.";
   if (r.includes("permission") || r.includes("access is denied"))
     return "Permission denied — the file is open in another program.";
   if (r.includes("unicodedecodeerror") || r.includes("codec can"))
-    return "This file contains characters the converter couldn’t read. Try saving it as UTF-8.";
+    return "This file contains characters the converter couldn't read. Try saving it as UTF-8.";
   if (r.includes("timeout") || r.includes("timed out"))
     return "Conversion took too long and was stopped. Try a smaller file.";
   if (r.includes("unsupported format") || r.includes("no text can be extracted"))
@@ -118,7 +118,7 @@ function friendlyError(raw) {
     return "Invalid file path.";
   // Fallback: hide stack trace, show only first sentence
   const first = raw.split(/[\n\r]/)[0].replace(/^[A-Za-z]+Error:\s*/i, "").trim();
-  return first.length > 120 ? first.slice(0, 117) + "…" : first || "Something went wrong.";
+  return first.length > 120 ? first.slice(0, 117) + "..." : first || "Something went wrong.";
 }
 
 /* ── Navigation ───────────────────────────────────────────────────────────── */
@@ -170,6 +170,17 @@ function wireConvert() {
   $("editor").addEventListener("input", () => {
     if (selected >= 0) files[selected].text = $("editor").value;
   });
+  // keyboard shortcuts
+  document.addEventListener("keydown", (e) => {
+    const activeView = document.querySelector(".view.active");
+    const isConvert = activeView && activeView.id === "view-convert";
+    if ((e.ctrlKey || e.metaKey) && e.key === "o" && !e.shiftKey) {
+      if (isConvert) { e.preventDefault(); addFiles(); }
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+      if (isConvert) { e.preventDefault(); convertAll(); }
+    }
+  });
 }
 async function addFiles() {
   try {
@@ -196,7 +207,10 @@ function clearFiles() { files = []; selected = -1; renderFiles(); renderOutput()
 async function convertAll() {
   const todo = files.filter(f => f.status === "pending" || f.status === "error");
   if (!todo.length) return toast("Nothing to convert", "err");
-  $("convert-btn").disabled = true;
+  const btn = $("convert-btn");
+  btn.disabled = true;
+  let doneCount = 0;
+  btn.textContent = "Converting 0 / " + todo.length + "…";
   for (const f of files) {
     if (f.status !== "pending" && f.status !== "error") continue;
     f.status = "doing"; f.error = ""; renderFiles();
@@ -207,10 +221,13 @@ async function convertAll() {
     } else {
       f.status = "error"; f.error = friendlyError(res.error);
     }
+    doneCount++;
+    btn.textContent = "Converting " + doneCount + " / " + todo.length + "…";
     renderFiles();
     if (selected === files.indexOf(f) || selected < 0) selectFile(files.indexOf(f));
   }
-  $("convert-btn").disabled = false;
+  btn.disabled = false;
+  btn.innerHTML = '<i class="ti ti-bolt"></i>Convert all';
   const ok   = files.filter(f => f.status === "done").length;
   const warn = files.filter(f => f.status === "warn").length;
   const err  = files.filter(f => f.status === "error").length;
@@ -249,8 +266,11 @@ function renderFiles() {
     const row = document.createElement("div");
     row.className = "file-row" + (i === selected ? " selected" : "");
     row.draggable = true;
-    const steps = f.steps.length ? f.steps.map(s => STEP_LABEL[s] || s).join(" · ")
-                                 : (f.error || (f.is_image ? "image" : "document"));
+    const sizeStr = f.size ? " · " + formatBytes(f.size) : "";
+    const stepsText = f.status === "pending"
+      ? (f.is_image ? "image" : "document") + sizeStr
+      : (f.steps.length ? f.steps.map(s => STEP_LABEL[s] || s).join(" · ") : (f.error || (f.is_image ? "image" : "document")));
+    const steps = stepsText;
     row.innerHTML =
       `<div class="ficon"><i class="ti ${f.is_image ? "ti-photo" : "ti-file-text"}"></i></div>
        <div class="fmeta"><div class="fname">${esc(f.name)}</div>
@@ -307,6 +327,18 @@ function renderOutput() {
     pv.innerHTML = text ? marked.parse(text) : '<div class="empty"><i class="ti ti-file-text"></i>Select a converted file</div>';
     pv.classList.toggle("bn", /[ঀ-৿]/.test(text));
   }
+  // word / char count badge
+  const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+  const chars = text.length;
+  let wc = document.getElementById("word-count");
+  if (!wc) {
+    wc = document.createElement("span");
+    wc.id = "word-count";
+    wc.style.cssText = "font-size:11px;color:var(--text-faint);margin-left:auto;padding-right:4px;";
+    const foot = document.querySelector("#view-convert .panel:last-child .panel-foot");
+    if (foot) foot.appendChild(wc);
+  }
+  wc.textContent = text ? words + " words · " + chars + " chars" : "";
 }
 async function exportCurrent() {
   const f = selected >= 0 ? files[selected] : null;
@@ -349,7 +381,7 @@ async function pickOcr() {
 function setOcr(m) {
   ocrPath = m.path;
   const isPdf = m.is_pdf || (m.path || "").toLowerCase().endsWith(".pdf");
-  $("ocr-file").textContent = m.name + (isPdf ? " (PDF — will scan each page)" : "");
+  $("ocr-file").textContent = m.name + (isPdf ? " (PDF - will scan each page)" : "");
 }
 async function runOcr() {
   if (!ocrPath) return toast("Choose an image or PDF first", "err");
@@ -375,7 +407,7 @@ function detectBijoy() {
     const pill = $("bj-detect");
     if (!t) { pill.className = "detect-pill"; pill.textContent = "Type to auto-detect"; return; }
     const s = await api().detect(t);
-    const map = { bijoy: "Bijoy detected ✓", unicode_bn: "Already Unicode", latin: "Latin / English", other: "Unrecognised" };
+    const map = { bijoy: "Bijoy detected", unicode_bn: "Already Unicode", latin: "Latin / English", other: "Unrecognised" };
     pill.className = "detect-pill " + s;
     pill.textContent = map[s] || "Unrecognised";
   }, 250);
@@ -473,6 +505,11 @@ function toast(msg, kind) {
   t.innerHTML = `<i class="ti ${kind === "ok" ? "ti-check" : kind === "err" ? "ti-alert-circle" : kind === "warn" ? "ti-alert-triangle" : "ti-info-circle"}"></i>${esc(msg)}`;
   $("toasts").appendChild(t);
   setTimeout(() => { t.style.opacity = "0"; setTimeout(() => t.remove(), 300); }, 2600);
+}
+function formatBytes(b) {
+  if (b < 1024) return b + " B";
+  if (b < 1024 * 1024) return (b / 1024).toFixed(0) + " KB";
+  return (b / (1024 * 1024)).toFixed(1) + " MB";
 }
 
 boot();
