@@ -916,6 +916,35 @@ class TestExtractLegacyDoc:
         monkeypatch.setitem(sys.modules, "olefile", fake_mod)
         assert _extract_legacy_doc("x.doc") == ""
 
+    def test_fc_chpx_too_large_falls_back_to_scan(self, monkeypatch):
+        """Table stream exists but fc_chpx value exceeds tdata bounds → cp0 unreadable → fallback scan."""
+        import struct as _struct
+        binary = bytearray(512)
+        _struct.pack_into("<I", binary, 48, 20)     # cc_text = 20
+        _struct.pack_into("<I", binary, 134, 9999)  # fc_chpx = 9999 → 9999+4 > 8 (tdata length)
+        for i in range(200, 220):
+            binary[i] = ord("C")                    # printable — fallback scan will find these
+        binary = bytes(binary)
+
+        tdata = bytearray(8)   # too short for fc_chpx=9999
+        tdata = bytes(tdata)
+
+        class FakeStream:
+            def __init__(self, data): self._data = data
+            def read(self): return self._data
+
+        class FakeOleFileIO:
+            def __init__(self, path): pass
+            def __enter__(self): return self
+            def __exit__(self, *a): pass
+            def exists(self, name): return name in ("WordDocument", "0Table")
+            def openstream(self, name):
+                return FakeStream(binary if name == "WordDocument" else tdata)
+
+        fake_mod = type("olefile", (), {"OleFileIO": FakeOleFileIO})
+        monkeypatch.setitem(sys.modules, "olefile", fake_mod)
+        assert _extract_legacy_doc("x.doc") == "C" * 20
+
     def test_fallback_scan_overflow_returns_empty(self, monkeypatch):
         """When fallback scan's best_off + cc_text exceeds data length, returns empty string."""
         import struct as _struct

@@ -4,6 +4,15 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.61] — 2026-06-27
+
+### Tests — legacy doc cp0 bounds + OCR partial failure (296 total, up from 294)
+
+- `TestExtractLegacyDoc.test_fc_chpx_too_large_falls_back_to_scan`: table stream exists but `fc_chpx + 4 > len(tdata)` → cp0 unreadable → fallback ASCII scan succeeds and returns text
+- `TestOcrPdf.test_partial_page_failure_empty_filtered_from_result`: first PDF page throws a generic exception (appended as `""`), second page succeeds; the `if p` filter in `"\n\n".join(...)` drops the empty entry
+
+---
+
 ## [v4.10.60] — 2026-06-27
 
 ### Tests — xlsx padding, legacy doc overflow, bijoy nukta (294 total, up from 291)
