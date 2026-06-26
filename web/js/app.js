@@ -316,23 +316,30 @@ async function convertAll() {
   btn.disabled = true; btn.setAttribute("aria-busy", "true");
   let doneCount = 0;
   btn.textContent = t("convert.converting", { done: 0, total: todo.length });
-  for (const f of files) {
-    if (f.status !== "pending" && f.status !== "error") continue;
-    f.status = "doing"; f.error = ""; renderFiles();
-    const res = await api().convert(f.path);
-    if (res.ok) {
-      f.text = res.text; f.steps = res.steps;
-      f.status = res.steps.some(s => EMPTY_STEPS.has(s)) ? "warn" : "done";
-    } else {
-      f.status = "error"; f.error = friendlyError(res.error);
+  try {
+    for (const f of files) {
+      if (f.status !== "pending" && f.status !== "error") continue;
+      f.status = "doing"; f.error = ""; renderFiles();
+      try {
+        const res = await api().convert(f.path);
+        if (res.ok) {
+          f.text = res.text; f.steps = res.steps;
+          f.status = res.steps.some(s => EMPTY_STEPS.has(s)) ? "warn" : "done";
+        } else {
+          f.status = "error"; f.error = friendlyError(res.error);
+        }
+      } catch (e) {
+        f.status = "error"; f.error = friendlyError(String(e));
+      }
+      doneCount++;
+      btn.textContent = t("convert.converting", { done: doneCount, total: todo.length });
+      renderFiles();
+      if (selected === files.indexOf(f) || selected < 0) selectFile(files.indexOf(f));
     }
-    doneCount++;
-    btn.textContent = t("convert.converting", { done: doneCount, total: todo.length });
-    renderFiles();
-    if (selected === files.indexOf(f) || selected < 0) selectFile(files.indexOf(f));
+  } finally {
+    btn.disabled = false; btn.removeAttribute("aria-busy");
+    btn.innerHTML = '<i class="ti ti-bolt"></i><span>' + esc(t("btn.convertAll")) + '</span>';
   }
-  btn.disabled = false; btn.removeAttribute("aria-busy");
-  btn.innerHTML = '<i class="ti ti-bolt"></i><span>' + esc(t("btn.convertAll")) + '</span>';
   const ok   = files.filter(f => f.status === "done").length;
   const warn = files.filter(f => f.status === "warn").length;
   const err  = files.filter(f => f.status === "error").length;
@@ -482,15 +489,19 @@ function detectBijoy() {
   detectTimer = setTimeout(async () => {
     const txt = $("bj-in").value.trim();
     if (!txt) return setDetectPill("idle");
-    const s = await api().detect(txt);
-    setDetectPill(s || "other");
+    try {
+      const s = await api().detect(txt);
+      setDetectPill(s || "other");
+    } catch (e) { /* detection unavailable; leave pill as-is */ }
   }, 250);
 }
 async function runBijoy() {
   const txt = $("bj-in").value.trim();
   if (!txt) return;
-  const res = await api().bijoy_convert(txt);
-  $("bj-out").value = res.text;
+  try {
+    const res = await api().bijoy_convert(txt);
+    $("bj-out").value = res.text;
+  } catch (e) { toast(t("error.generic"), "err"); }
 }
 
 /* ── History view ─────────────────────────────────────────────────────────── */

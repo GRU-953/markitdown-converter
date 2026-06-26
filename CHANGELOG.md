@@ -4,6 +4,17 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.5] — 2026-06-26
+
+### Fixed — convert loop robustness
+- `convertAll()` is now wrapped in `try { … } finally { … }`. Previously, an unexpected exception inside the loop would leave the Convert button permanently disabled and files stuck in the "doing" state until the app was restarted. The finally block guarantees the button is always re-enabled and its label restored.
+- Each individual file conversion is also wrapped in its own `try/catch`. An unexpected exception from a single file now marks that file as failed rather than aborting the entire batch.
+
+### Fixed — Bijoy view unhandled rejections
+- `detectBijoy()` and `runBijoy()` now handle errors from `api().detect()` and `api().bijoy_convert()` respectively. Previously an API failure in either call would produce an unhandled Promise rejection; now detection leaves the pill unchanged and conversion shows the generic error toast.
+
+---
+
 ## [v4.10.4] — 2026-06-26
 
 ### Improved — indeterminate progress bar animation
