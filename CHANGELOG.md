@@ -4,6 +4,16 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.53] — 2026-06-27
+
+### Tests — legacy-doc printable-ratio guard + whitespace normalization (259 total, up from 256)
+
+- `TestExtractLegacyDoc.test_low_printable_ratio_returns_empty`: Text region consisting entirely of DEL (0x7F) bytes — non-printable, non-whitespace, survived all substitutions — yields 0% printable ratio, triggering the `< 0.10` sanity guard in `_extract_legacy_doc`; required the fake Table stream to control `text_start` independent of the FIB scan
+- `TestDocxFontDetection.test_internal_whitespace_collapsed_in_font_name`: `w:ascii="Siyam  Rupali  ANSI"` (double internal spaces) → `_WS_RE.sub(" ", ...)` collapses to `"siyam rupali ansi"` → match found → True
+- `TestRtfFontDetection.test_internal_whitespace_collapsed_in_font_name`: RTF font name with double spaces → `_WS_RE.sub(" ", name).strip()` collapses → match → True
+
+---
+
 ## [v4.10.52] — 2026-06-27
 
 ### Tests — PPTX remaining extensions (.ppsm, .potx, .potm) and a:ea tag (256 total, up from 252)

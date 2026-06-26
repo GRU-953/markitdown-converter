@@ -837,6 +837,42 @@ class TestExtractLegacyDoc:
         monkeypatch.setitem(sys.modules, "olefile", fake_mod)
         assert _extract_legacy_doc("x.doc") == ""
 
+    def test_low_printable_ratio_returns_empty(self, monkeypatch):
+        """Text region with 0% printable chars (all U+0081) triggers ratio sanity guard → ''."""
+        import struct as _struct
+        # Build a 512-byte WordDocument stream with deterministic FIB offsets:
+        #   csw=cslw=0 → fib_rglw_start=36, fib_rglw_end=36, fib_rgfclcb_start=38
+        #   cc_text=20 at offset 48; fc_chpx=4 at offset 134 (fib_rgfclcb_start + 12*8 = 134)
+        #   text region [200:220] filled with 0x81 — non-printable, non-whitespace,
+        #   not removed by any substitution, so isprintable() == False for every char.
+        binary = bytearray(512)
+        _struct.pack_into("<I", binary, 48, 20)     # cc_text = 20
+        _struct.pack_into("<I", binary, 134, 4)     # fc_chpx = 4 → read cp0 from tdata[4:8]
+        for i in range(200, 220):
+            binary[i] = 0x7F                        # DEL: non-printable, non-whitespace, not substituted
+        binary = bytes(binary)
+
+        # Table stream: 8 bytes; cp0 = 200 at offset 4
+        tdata = bytearray(8)
+        _struct.pack_into("<I", tdata, 4, 200)
+        tdata = bytes(tdata)
+
+        class FakeStream:
+            def __init__(self, data): self._data = data
+            def read(self): return self._data
+
+        class FakeOleFileIO:
+            def __init__(self, path): pass
+            def __enter__(self): return self
+            def __exit__(self, *a): pass
+            def exists(self, name): return name in ("WordDocument", "0Table")
+            def openstream(self, name):
+                return FakeStream(binary if name == "WordDocument" else tdata)
+
+        fake_mod = type("olefile", (), {"OleFileIO": FakeOleFileIO})
+        monkeypatch.setitem(sys.modules, "olefile", fake_mod)
+        assert _extract_legacy_doc("x.doc") == ""
+
 
 # ── DOCX font-name Bijoy detection ───────────────────────────────────────────
 
@@ -976,6 +1012,22 @@ class TestDocxFontDetection:
             z.writestr("mimetype", "placeholder")
         assert _docx_font_has_bijoy(str(docx_path)) is False
 
+    def test_internal_whitespace_collapsed_in_font_name(self, tmp_path):
+        """Font name with internal double-spaces is collapsed by _WS_RE → match found → True."""
+        import zipfile
+        docx_path = tmp_path / "double_space.docx"
+        xml = (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+            '<w:body><w:p><w:r>'
+            '<w:rPr><w:rFonts w:ascii="Siyam  Rupali  ANSI"/></w:rPr>'
+            '<w:t>test</w:t>'
+            '</w:r></w:p></w:body></w:document>'
+        )
+        with zipfile.ZipFile(str(docx_path), "w") as z:
+            z.writestr("word/document.xml", xml)
+        assert _docx_font_has_bijoy(str(docx_path)) is True
+
 
 # ── RTF font-name Bijoy detection ─────────────────────────────────────────────
 
@@ -1013,6 +1065,11 @@ class TestRtfFontDetection:
         """Empty fonttbl block → False (no font entries to parse)."""
         rtf = r'{\fonttbl}'
         assert _rtf_font_has_bijoy(rtf) is False
+
+    def test_internal_whitespace_collapsed_in_font_name(self):
+        """Font name with double internal spaces collapsed by _WS_RE → match found → True."""
+        rtf = r'{\fonttbl{\f0\fnil  Siyam  Rupali  ANSI;}}'
+        assert _rtf_font_has_bijoy(rtf) is True
 
     def test_rtf_font_detection_triggers_bijoy_conversion(self, tmp_path, monkeypatch):
         """Pure-ASCII Bijoy RTF + SutonnyMJ font → bijoy step via RTF font detection."""
