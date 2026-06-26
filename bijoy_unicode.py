@@ -457,7 +457,12 @@ def detect_script(text: str) -> str:
     # catching Bijoy+Latin mixed documents that the prior check rejected.
     sig = bj + la
     min_bj = 5 if sig > 100 else (3 if sig > 30 else 2)
-    if bj >= min_bj and (la == 0 or bj * 13 >= la):
+    # Short texts keep the strict 10× ratio to prevent incidental typographic
+    # characters (©, —, ™, °) in English headers from triggering false Bijoy
+    # classification.  Longer texts use the relaxed 13× ratio (~7.7 % density)
+    # to catch Bijoy+Latin mixed documents at lower Bijoy density.
+    ratio_k = 13 if sig > 30 else 10
+    if bj >= min_bj and (la == 0 or bj * ratio_k >= la):
         return "bijoy"
     return "latin"
 

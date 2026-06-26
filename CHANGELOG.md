@@ -4,6 +4,21 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.29] — 2026-06-26
+
+### Fixed — detect_script false positive on short English texts with typographic chars
+
+`detect_script()` introduced in v4.10.26 applied the relaxed 13× Bijoy density ratio uniformly to all text lengths. Short texts (sig ≤ 30) with 2 Bijoy-range chars (e.g., © and —) and ~20 Latin chars could cross the 7.7% threshold and be wrongly classified as Bijoy.
+
+Fix: the strict 10× ratio (same as the original pre-v4.10.26 threshold) is kept for short texts (sig ≤ 30). The relaxed 13× ratio applies only to medium and long texts (sig > 30) where the intent — catching mixed Bijoy+Latin documents at lower density — is valid.
+
+Example fixed: `detect_script("© 2024 Company Name — Annual Report")` returned "bijoy"; now correctly returns "latin".
+
+### Tests — 1 new regression guard (166 total, up from 165)
+- `TestDetectScript.test_english_copyright_notice_not_bijoy`: bj=2, la=23, sig=25 ≤ 30 → strict 10× ratio → "latin"
+
+---
+
 ## [v4.10.28] — 2026-06-26
 
 ### Fixed — DOCX Bijoy font detection covers .docm / .dotx / .dotm variants

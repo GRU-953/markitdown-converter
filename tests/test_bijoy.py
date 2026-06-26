@@ -72,6 +72,11 @@ class TestDetectScript:
         # © (U+00A9) and ¨ (U+00A8) are both Bijoy-range; no Latin → bijoy
         assert detect_script("©¨") == "bijoy"
 
+    def test_english_copyright_notice_not_bijoy(self):
+        # bj=2 (©, —), la=23, sig=25 ≤ 30 → strict 10× ratio → 2×10=20 < 23 → latin.
+        # Regression guard: the relaxed 13× ratio for longer texts must NOT apply here.
+        assert detect_script("© 2024 Company Name — Annual Report") == "latin"
+
 
 # ── is_bijoy ──────────────────────────────────────────────────────────────────
 
