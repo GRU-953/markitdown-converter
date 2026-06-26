@@ -241,6 +241,49 @@ def _rtf_font_has_bijoy(raw_rtf: str) -> bool:
     return False
 
 
+def _pptx_font_has_bijoy(path: str) -> bool:
+    """Return True if any slide, master, layout, or theme in the PPTX uses a
+    known Bijoy font.
+
+    PPTX (and its variants .pptm/.ppsx/.potx) is a ZIP of XML files.  Font
+    names appear on ``<a:latin typeface="..."/>`` elements in the DrawingML
+    namespace.  We scan slides, slide masters, slide layouts, and the theme
+    file — the places where a presentation template font is most likely set.
+    Normalisation mirrors _docx_font_has_bijoy.  Returns False on any error.
+    """
+    import zipfile
+    import xml.etree.ElementTree as ET
+    _DML_NS = "http://schemas.openxmlformats.org/drawingml/2006/main"
+    _PPTX_TARGETS = ("ppt/slides/slide", "ppt/slideMasters/slideMaster",
+                     "ppt/slideLayouts/slideLayout", "ppt/theme/theme")
+    try:
+        with zipfile.ZipFile(path, "r") as z:
+            names = z.namelist()
+            parts = [
+                z.read(n) for n in names
+                if any(n.startswith(prefix) for prefix in _PPTX_TARGETS)
+            ]
+        if not parts:
+            return False
+        for xml_bytes in parts:
+            root = ET.fromstring(xml_bytes)
+            for tag in (f"{{{_DML_NS}}}latin", f"{{{_DML_NS}}}ea",
+                        f"{{{_DML_NS}}}cs"):
+                for elem in root.iter(tag):
+                    val = elem.get("typeface", "")
+                    if not val or val.startswith("+"):  # skip theme-font refs
+                        continue
+                    norm = _WS_RE.sub(" ", val.strip().lower())
+                    comma = norm.find(",")
+                    if comma >= 0:
+                        norm = norm[:comma].strip()
+                    if norm in _BIJOY_FONTS:
+                        return True
+    except Exception:
+        pass
+    return False
+
+
 def is_image(path) -> bool:
     """Return True if *path* has a known raster-image extension."""
     return Path(path).suffix.lower() in IMAGE_EXTS
@@ -505,6 +548,11 @@ def convert_file(
         # extracted when reading the raw RTF bytes above.
         if not needs_bijoy and _rtf_raw:
             needs_bijoy = _rtf_font_has_bijoy(_rtf_raw)
+        # Font-assisted detection for PPTX: scan <a:latin typeface="..."/> in
+        # slides, masters, layouts, and theme XML parts.
+        _PPTX_EXTS = (".pptx", ".pptm", ".ppsx", ".ppsm", ".potx", ".potm")
+        if not needs_bijoy and p.suffix.lower() in _PPTX_EXTS:
+            needs_bijoy = _pptx_font_has_bijoy(str(p))
         if needs_bijoy:
             text = bijoy_func(text)
             steps.append("bijoy")

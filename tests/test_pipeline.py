@@ -14,7 +14,7 @@ import pipeline
 from pipeline import (
     convert_file, is_image, is_pdf, is_legacy_doc, is_unsupported, is_rtf, is_xlsx, is_plain_text,
     _read_plain_text, _extract_xlsx_direct, _extract_legacy_doc,
-    _docx_font_has_bijoy, _rtf_font_has_bijoy,
+    _docx_font_has_bijoy, _rtf_font_has_bijoy, _pptx_font_has_bijoy,
 )
 
 
@@ -842,6 +842,73 @@ class TestRtfFontDetection:
         monkeypatch.setattr(pipeline, "_rtf_font_has_bijoy", lambda raw: True)
         out = convert_file(
             str(f),
+            auto_bijoy=True,
+            is_bijoy_func=lambda t: False,
+            bijoy_func=lambda t: "বাংলা",
+        )
+        assert "bijoy" in out["steps"]
+        assert out["text"] == "বাংলা"
+
+
+# ── PPTX font-name Bijoy detection ───────────────────────────────────────────
+
+class TestPptxFontDetection:
+    def _make_pptx_with_font(self, tmp_path, font_name, ext="pptx"):
+        """Minimal PPTX ZIP containing one slide with the given font name."""
+        import zipfile
+        pptx_path = tmp_path / f"test.{ext}"
+        xml = (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"'
+            '       xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">'
+            '<p:spTree><p:sp><p:txBody><a:p><a:r>'
+            f'<a:rPr><a:latin typeface="{font_name}"/></a:rPr>'
+            '<a:t>evsjv</a:t>'
+            '</a:r></a:p></p:txBody></p:sp></p:spTree></p:sld>'
+        )
+        with zipfile.ZipFile(str(pptx_path), "w") as z:
+            z.writestr("ppt/slides/slide1.xml", xml)
+        return str(pptx_path)
+
+    def test_bijoy_font_detected(self, tmp_path):
+        """SutonnyMJ in slide a:latin typeface → True."""
+        assert _pptx_font_has_bijoy(self._make_pptx_with_font(tmp_path, "SutonnyMJ")) is True
+
+    def test_non_bijoy_font_returns_false(self, tmp_path):
+        """Calibri is not a Bijoy font → False."""
+        assert _pptx_font_has_bijoy(self._make_pptx_with_font(tmp_path, "Calibri")) is False
+
+    def test_theme_font_ref_skipped(self, tmp_path):
+        """Theme font references (+mj-lt, +mn-lt) must not trigger Bijoy detection."""
+        assert _pptx_font_has_bijoy(self._make_pptx_with_font(tmp_path, "+mn-lt")) is False
+
+    def test_invalid_zip_returns_false(self, tmp_path):
+        """Non-ZIP file doesn't raise — just returns False."""
+        bad = tmp_path / "bad.pptx"
+        bad.write_bytes(b"not a zip file at all")
+        assert _pptx_font_has_bijoy(str(bad)) is False
+
+    def test_pptm_also_triggers_font_detection(self, tmp_path, monkeypatch):
+        """.pptm (macro-enabled PPTX) shares the same ZIP structure → font detection applies."""
+        f = _touch(tmp_path, "macro.pptm")
+        monkeypatch.setattr(pipeline, "_pptx_font_has_bijoy", lambda p: True)
+        out = convert_file(
+            str(f),
+            markitdown=FakeMarkItDown("evsjv"),
+            auto_bijoy=True,
+            is_bijoy_func=lambda t: False,
+            bijoy_func=lambda t: "বাংলা",
+        )
+        assert "bijoy" in out["steps"]
+        assert out["text"] == "বাংলা"
+
+    def test_pptx_font_detection_triggers_bijoy_conversion(self, tmp_path, monkeypatch):
+        """ASCII-only Bijoy PPTX + SutonnyMJ font → bijoy step via font detection."""
+        f = _touch(tmp_path, "slides.pptx")
+        monkeypatch.setattr(pipeline, "_pptx_font_has_bijoy", lambda p: True)
+        out = convert_file(
+            str(f),
+            markitdown=FakeMarkItDown("evsjv"),
             auto_bijoy=True,
             is_bijoy_func=lambda t: False,
             bijoy_func=lambda t: "বাংলা",

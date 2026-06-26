@@ -4,6 +4,28 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.34] — 2026-06-27
+
+### Improved — PPTX Bijoy font detection via DrawingML a:latin scanning
+
+Added `_pptx_font_has_bijoy()` to `pipeline.py`. PowerPoint presentations (`.pptx`, `.pptm`, `.ppsx`, `.ppsm`, `.potx`, `.potm`) that use Bijoy/SutonnyMJ fonts for Bengali text now get font-assisted detection as a secondary signal when the character-range scan misses pure-ASCII Bijoy text.
+
+The function opens the PPTX ZIP and scans `ppt/slides/slide*.xml`, `ppt/slideMasters/`, `ppt/slideLayouts/`, and `ppt/theme/theme*.xml` for `<a:latin typeface="..."/>` (DrawingML namespace) elements. Theme font references (`+mj-lt`, `+mn-lt`) are skipped — only concrete typeface names are matched against the `_BIJOY_FONTS` allowlist.
+
+This mirrors the DOCX font detection (v4.10.27) and the RTF font detection (v4.10.30), completing font-level detection across all three major Office document families.
+
+### Tests — 6 new tests (199 total, up from 193)
+
+`TestPptxFontDetection` (pipeline):
+- `test_bijoy_font_detected`: SutonnyMJ in slide `<a:latin>` → True
+- `test_non_bijoy_font_returns_false`: Calibri → False
+- `test_theme_font_ref_skipped`: `+mn-lt` theme reference → False (must not trigger)
+- `test_invalid_zip_returns_false`: non-ZIP → False (no raise)
+- `test_pptm_also_triggers_font_detection`: `.pptm` extension → font detection fires → bijoy step
+- `test_pptx_font_detection_triggers_bijoy_conversion`: ASCII-only PPTX + font flag → bijoy step
+
+---
+
 ## [v4.10.33] — 2026-06-27
 
 ### Tests — 4 new coverage-gap tests (193 total, up from 189)
