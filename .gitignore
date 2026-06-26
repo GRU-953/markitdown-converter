@@ -11,3 +11,4 @@ assets/app_icon.ico
 htmlcov/
 launch_*.txt
 launch_*.png
+*_audit_results.json

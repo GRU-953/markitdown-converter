@@ -34,6 +34,7 @@ These formats are supported but may hit limits on very large files:
 |---|---|---|
 | ZIP archive > ~50 MB | `MemoryError` — MarkItDown expands the entire archive into memory; raises a friendly "insufficient memory" error in the UI | Split the archive into smaller zips or extract the relevant files first |
 | ZIP archive 15–50 MB | Conversion succeeds but may take 1–3 minutes | Convert in the app (no timeout); the corpus audit may report TIMEOUT |
+| XLSX > ~6 MB with many columns | MarkItDown's `XlsxConverter` may trigger `ONNXRuntimeError` (magika model allocation) or `MemoryError` (numpy array too large). The pipeline automatically falls back to `openpyxl read_only` streaming — lazy row iteration, no ONNX, lower memory use | ⚠ amber badge if result is empty; otherwise converts normally |
 | PDF scan-only > ~30 MB | Text-layer check takes 30–120 s to confirm there is no text | Enable OCR for scanned PDFs; large scans are slow even to detect as empty |
 | PPTX with many embedded images | File size up to ~280 MB; text extraction is fast (MarkItDown reads slide XML, not images) | No action needed — works fine |
 
