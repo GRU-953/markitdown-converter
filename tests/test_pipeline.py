@@ -13,7 +13,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 import pipeline
 from pipeline import (
     convert_file, is_image, is_legacy_doc, is_unsupported, is_rtf, is_xlsx, is_plain_text,
-    _read_plain_text, _extract_xlsx_direct, _extract_legacy_doc, _docx_font_has_bijoy,
+    _read_plain_text, _extract_xlsx_direct, _extract_legacy_doc,
+    _docx_font_has_bijoy, _rtf_font_has_bijoy,
 )
 
 
@@ -734,3 +735,57 @@ class TestDocxFontDetection:
             z.writestr("word/document.xml", doc_xml)
             z.writestr("word/styles.xml", styles_xml)
         assert _docx_font_has_bijoy(str(docx_path)) is True
+
+
+# ── RTF font-name Bijoy detection ─────────────────────────────────────────────
+
+class TestRtfFontDetection:
+    def test_bijoy_font_detected(self):
+        """SutonnyMJ in fonttbl → True."""
+        rtf = r'{\fonttbl{\f0\fnil\fcharset0 SutonnyMJ;}}'
+        assert _rtf_font_has_bijoy(rtf) is True
+
+    def test_non_bijoy_font_returns_false(self):
+        """Arial is not a Bijoy font → False."""
+        rtf = r'{\fonttbl{\f0\fnil\fcharset0 Arial;}}'
+        assert _rtf_font_has_bijoy(rtf) is False
+
+    def test_no_fonttbl_returns_false(self):
+        """RTF without a fonttbl block → False."""
+        rtf = r'{\rtf1\ansi This is plain text with no font table.}'
+        assert _rtf_font_has_bijoy(rtf) is False
+
+    def test_siyam_rupali_ansi_detected(self):
+        """Multi-word Bijoy font 'Siyam Rupali ANSI' → True."""
+        rtf = r'{\fonttbl{\f0\fnil\fcharset0 Siyam Rupali ANSI;}}'
+        assert _rtf_font_has_bijoy(rtf) is True
+
+    def test_multiple_fonts_bijoy_among_others(self):
+        """SutonnyMJ mixed with non-Bijoy fonts in the same fonttbl → True."""
+        rtf = (r'{\fonttbl'
+               r'{\f0\fnil\fcharset0 Arial;}'
+               r'{\f1\fnil\fcharset0 SutonnyMJ;}'
+               r'{\f2\fnil\fcharset0 Times New Roman;}'
+               r'}')
+        assert _rtf_font_has_bijoy(rtf) is True
+
+    def test_empty_fonttbl_returns_false(self):
+        """Empty fonttbl block → False (no font entries to parse)."""
+        rtf = r'{\fonttbl}'
+        assert _rtf_font_has_bijoy(rtf) is False
+
+    def test_rtf_font_detection_triggers_bijoy_conversion(self, tmp_path, monkeypatch):
+        """Pure-ASCII Bijoy RTF + SutonnyMJ font → bijoy step via RTF font detection."""
+        f = tmp_path / "bangla.rtf"
+        f.write_bytes(b"dummy rtf content")
+        monkeypatch.setattr(pipeline, "_STRIPRTF_AVAILABLE", True)
+        monkeypatch.setattr(pipeline, "_rtf_to_text", lambda raw: "evsjv")
+        monkeypatch.setattr(pipeline, "_rtf_font_has_bijoy", lambda raw: True)
+        out = convert_file(
+            str(f),
+            auto_bijoy=True,
+            is_bijoy_func=lambda t: False,
+            bijoy_func=lambda t: "বাংলা",
+        )
+        assert "bijoy" in out["steps"]
+        assert out["text"] == "বাংলা"

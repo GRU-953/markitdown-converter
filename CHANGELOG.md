@@ -4,6 +4,27 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.30] — 2026-06-26
+
+### Improved — RTF Bijoy font detection via fonttbl scanning
+
+Added `_rtf_font_has_bijoy()` to `pipeline.py`, which scans the `{\fonttbl}` block of raw RTF text and checks each declared font name against the curated `_BIJOY_FONTS` allowlist. This mirrors the DOCX font detection added in v4.10.27 and closes the same gap for RTF files: pure-ASCII Bijoy text (e.g. `evsjv` = বাংলা, no conjunct characters) cannot be detected by character-range scanning alone, but the RTF font table reliably names the typeface.
+
+The RTF conversion branch now reads raw bytes once at the start (rather than only when striprtf is available), feeding both the striprtf extractor and the new font detection. The fallback path via MarkItDown is unchanged.
+
+### Tests — 7 new RTF font detection tests (173 total, up from 166)
+
+`TestRtfFontDetection` (pipeline):
+- `test_bijoy_font_detected`: SutonnyMJ in fonttbl → True
+- `test_non_bijoy_font_returns_false`: Arial → False
+- `test_no_fonttbl_returns_false`: RTF without fonttbl block → False
+- `test_siyam_rupali_ansi_detected`: multi-word name "Siyam Rupali ANSI" → True
+- `test_multiple_fonts_bijoy_among_others`: SutonnyMJ among non-Bijoy fonts → True
+- `test_empty_fonttbl_returns_false`: empty `{\fonttbl}` block → False
+- `test_rtf_font_detection_triggers_bijoy_conversion`: ASCII-only Bijoy RTF + font flag → bijoy step
+
+---
+
 ## [v4.10.29] — 2026-06-26
 
 ### Fixed — detect_script false positive on short English texts with typographic chars

@@ -212,6 +212,35 @@ def _docx_font_has_bijoy(path: str) -> bool:
     return False
 
 
+def _rtf_font_has_bijoy(raw_rtf: str) -> bool:
+    """Return True if the RTF font table declares a known Bijoy font.
+
+    Scans the {\fonttbl} block of raw RTF text for font names matching the
+    curated _BIJOY_FONTS allowlist. Normalisation mirrors _docx_font_has_bijoy:
+    lowercase, collapse whitespace, drop comma-suffix style variants.
+    Returns False when no fonttbl block is found or on any parse failure.
+    """
+    import re
+    m = re.search(r'\{\\fonttbl((?:[^{}]|\{[^}]*\})*)\}', raw_rtf)
+    if not m:
+        return False
+    fonttbl = m.group(1)
+    # Each ';'-terminated segment holds one font declaration.  Remove RTF
+    # control words (\word or \wordN) and braces to isolate the font name.
+    for seg in fonttbl.split(";"):
+        name = re.sub(r"\\[a-z]+\d*", "", seg)
+        name = name.replace("{", "").replace("}", "").strip().lower()
+        if not name:
+            continue
+        comma = name.find(",")
+        if comma >= 0:
+            name = name[:comma].strip()
+        name = _WS_RE.sub(" ", name).strip()
+        if name in _BIJOY_FONTS:
+            return True
+    return False
+
+
 def is_image(path) -> bool:
     """Return True if *path* has a known raster-image extension."""
     return Path(path).suffix.lower() in IMAGE_EXTS
@@ -346,6 +375,7 @@ def convert_file(
         )
 
     steps = []
+    _rtf_raw = ""  # populated in the RTF branch; used for font-name detection below
 
     if not auto_ocr and is_image(p):
         # B-4: image with OCR disabled — nothing to extract
@@ -400,14 +430,17 @@ def convert_file(
         if not text.strip():
             steps.append("doc_empty")
     elif is_rtf(p):
-        # RTF: try striprtf first, fall back to MarkItDown
+        # RTF: read raw bytes once — used by striprtf AND font detection below.
+        try:
+            _rtf_raw = p.read_bytes().decode("cp1252", errors="replace")
+        except Exception:
+            _rtf_raw = ""
         text = ""
-        if _STRIPRTF_AVAILABLE:
+        if _rtf_raw and _STRIPRTF_AVAILABLE:
             try:
-                raw_rtf = p.read_bytes().decode("cp1252", errors="replace")
-                text = _rtf_to_text(raw_rtf)
+                text = _rtf_to_text(_rtf_raw)
             except Exception:
-                text = ""
+                pass
         if not text.strip():
             # Fall back to MarkItDown
             try:
@@ -468,6 +501,10 @@ def convert_file(
         # embedded in the DOCX metadata is a reliable secondary signal.
         if not needs_bijoy and p.suffix.lower() in (".docx", ".docm", ".dotx", ".dotm"):
             needs_bijoy = _docx_font_has_bijoy(str(p))
+        # Font-assisted detection for RTF: same idea — scan the {\fonttbl} block
+        # extracted when reading the raw RTF bytes above.
+        if not needs_bijoy and _rtf_raw:
+            needs_bijoy = _rtf_font_has_bijoy(_rtf_raw)
         if needs_bijoy:
             text = bijoy_func(text)
             steps.append("bijoy")
