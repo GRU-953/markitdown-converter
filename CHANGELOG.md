@@ -4,6 +4,13 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.19] — 2026-06-26
+
+### Removed — dead code cleanup (utils.py)
+- `utils.py` and its 11 tests (`test_utils.py`) have been removed. The file contained a path parser for tkinter's drag-and-drop event format — a leftover from the old CTk UI that was never imported in the current pywebview-based codebase. The CI syntax-check and coverage steps have been updated to match.
+
+---
+
 ## [v4.10.18] — 2026-06-26
 
 ### Improved — Excel output renders as a formatted table
