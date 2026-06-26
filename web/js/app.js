@@ -63,9 +63,12 @@ function boot() {
   start();
 }
 async function start() {
-  try { cfg = Object.assign(cfg, await api().get_config()); } catch (e) {}
-  try { LOCALES = await api().get_locales(); } catch (e) { LOCALES = {}; }
-  try { platform = await api().get_platform(); } catch (e) {}
+  const [cfgRes, locRes, platRes] = await Promise.allSettled([
+    api().get_config(), api().get_locales(), api().get_platform(),
+  ]);
+  if (cfgRes.status === "fulfilled") cfg = Object.assign(cfg, cfgRes.value);
+  LOCALES = locRes.status === "fulfilled" ? locRes.value : {};
+  if (platRes.status === "fulfilled") platform = platRes.value;
   lang = (cfg.language === "bn") ? "bn" : "en";
   applyTheme(); applyPalette(); applyPlatform();
   wireNav(); wireMode(); wireLang(); wirePalette(); wireConvert(); wireBijoy();

@@ -64,8 +64,8 @@ def ocr_image(image_path: str, language: str = "English") -> str:
     lang_code = LANG_CODES.get(language, "eng")
 
     try:
-        img = Image.open(path)
-        text = pytesseract.image_to_string(img, lang=lang_code)
+        with Image.open(path) as img:
+            text = pytesseract.image_to_string(img, lang=lang_code)
         return text.strip()
     except pytesseract.TesseractNotFoundError:
         raise RuntimeError(

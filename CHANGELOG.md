@@ -4,6 +4,16 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.7] — 2026-06-26
+
+### Improved — faster app startup
+- The three startup API calls (config, locales, platform) are now fired in parallel using `Promise.allSettled()` instead of sequentially. On average this reduces the time between window appearing and UI becoming interactive.
+
+### Fixed — image file handle left open after OCR
+- `ocr_image()` in `ocr_engine.py` now uses `Image.open()` as a context manager (`with Image.open(...) as img:`). Previously the PIL file handle was never explicitly closed, which could prevent the source image from being moved or deleted on Windows while the conversion result was still being used.
+
+---
+
 ## [v4.10.6] — 2026-06-26
 
 ### Fixed — export format modal double-open and focus
