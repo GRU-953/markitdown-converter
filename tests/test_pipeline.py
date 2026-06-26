@@ -903,6 +903,22 @@ class TestDocxFontDetection:
         assert "bijoy" in out["steps"]
         assert out["text"] == "বাংলা"
 
+    def test_hAnsi_only_font_attr_detected(self, tmp_path):
+        """w:rFonts with only w:hAnsi (no w:ascii) → all attrib.values() are checked → True."""
+        import zipfile
+        docx_path = tmp_path / "hansi_only.docx"
+        xml = (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+            '<w:body><w:p><w:r>'
+            '<w:rPr><w:rFonts w:hAnsi="SutonnyMJ"/></w:rPr>'
+            '<w:t>evsjv</w:t>'
+            '</w:r></w:p></w:body></w:document>'
+        )
+        with zipfile.ZipFile(str(docx_path), "w") as z:
+            z.writestr("word/document.xml", xml)
+        assert _docx_font_has_bijoy(str(docx_path)) is True
+
     def test_bijoy_font_in_styles_xml_detected(self, tmp_path):
         """Font declared only in word/styles.xml (paragraph style) is also detected."""
         import zipfile
@@ -1095,6 +1111,23 @@ class TestPptxFontDetection:
         assert "bijoy" in out["steps"]
         assert out["text"] == "বাংলা"
 
+    def test_cs_font_tag_detected(self, tmp_path):
+        """Bijoy font on a:cs (complex-script tag) → True."""
+        import zipfile
+        pptx_path = tmp_path / "cs_font.pptx"
+        xml = (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"'
+            '       xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">'
+            '<p:spTree><p:sp><p:txBody><a:p><a:r>'
+            '<a:rPr><a:cs typeface="SutonnyMJ"/></a:rPr>'
+            '<a:t>evsjv</a:t>'
+            '</a:r></a:p></p:txBody></p:sp></p:spTree></p:sld>'
+        )
+        with zipfile.ZipFile(str(pptx_path), "w") as z:
+            z.writestr("ppt/slides/slide1.xml", xml)
+        assert _pptx_font_has_bijoy(str(pptx_path)) is True
+
     def test_empty_zip_no_parts_returns_false(self, tmp_path):
         """PPTX ZIP with no matching XML parts → parts is empty → False."""
         import zipfile
@@ -1200,6 +1233,27 @@ class TestOdtFontDetection:
             '<office:font-face-decls>'
             '<style:font-face style:name="SutonnyMJ" svg:font-family="SutonnyMJ"/>'
             '</office:font-face-decls>'
+            '</office:document-styles>'
+        )
+        with zipfile.ZipFile(str(odt_path), "w") as z:
+            z.writestr("styles.xml", styles_xml)
+        assert _odt_font_has_bijoy(str(odt_path)) is True
+
+    def test_bijoy_fo_font_in_styles_xml_detected(self, tmp_path):
+        """SutonnyMJ in fo:font-name on styles.xml (not content.xml) → True."""
+        import zipfile
+        odt_path = tmp_path / "styles_fo.odt"
+        styles_xml = (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<office:document-styles'
+            '  xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"'
+            '  xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0"'
+            '  xmlns:fo="http://www.w3.org/1999/XSL/Format">'
+            '<office:styles>'
+            '<style:style style:name="Default" style:family="paragraph">'
+            '<style:text-properties fo:font-name="SutonnyMJ"/>'
+            '</style:style>'
+            '</office:styles>'
             '</office:document-styles>'
         )
         with zipfile.ZipFile(str(odt_path), "w") as z:

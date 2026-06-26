@@ -4,6 +4,23 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.49] — 2026-06-27
+
+### Tests — font-attribute-level coverage for DOCX, PPTX, ODT (247 total, up from 244)
+
+Closed 3 attribute-level gaps in the Bijoy font-detection functions:
+
+**`TestDocxFontDetection`:**
+- `test_hAnsi_only_font_attr_detected`: `w:rFonts` with only `w:hAnsi="SutonnyMJ"` (no `w:ascii`) → `elem.attrib.values()` iterates ALL attributes → `True`; confirms that non-ascii Word font attributes are also detected
+
+**`TestPptxFontDetection`:**
+- `test_cs_font_tag_detected`: Bijoy font on `<a:cs typeface="SutonnyMJ"/>` (complex-script tag, not `a:latin`) → `True`; the function scans `a:latin`, `a:ea`, and `a:cs` — this test exercises the `a:cs` branch
+
+**`TestOdtFontDetection`:**
+- `test_bijoy_fo_font_in_styles_xml_detected`: `fo:font-name="SutonnyMJ"` on `<style:text-properties>` in `styles.xml` (not `content.xml`) → `True`; tests the intersection of the `styles.xml` file path and the `fo:font-name` attribute path
+
+---
+
 ## [v4.10.48] — 2026-06-27
 
 ### Tests — Word template and PPTX Show extension coverage (244 total, up from 241)
