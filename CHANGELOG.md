@@ -4,6 +4,22 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.13] — 2026-06-26
+
+### Fixed — system-info failure now defaults to low-end mode
+- If `get_system_info()` fails at startup (API timeout, frozen bundle quirk, or any unexpected error), the app now assumes single-core / low-end hardware instead of silently leaving high-end defaults active. This means animations are suppressed and conversions remain sequential — the correct conservative behaviour when hardware capability is unknown. Previously a startup-API failure would leave the machine classified as capable, potentially triggering expensive animations or concurrent conversions on a machine that cannot handle them.
+
+### Improved — concurrent conversion cap lowered to 2
+- The maximum number of files converted in parallel is reduced from 4 to 2. On machines with 8+ cores the previous cap of 4 simultaneous conversions could cause significant memory pressure (each conversion can briefly load a full 200 MB file plus MarkItDown's working buffers). Two concurrent conversions still gives a meaningful speed improvement on multi-core machines while keeping peak RAM usage predictable.
+
+### Improved — failed file auto-selected after batch conversion
+- When a batch conversion finishes and one or more files failed, the first failed file is now automatically selected. The user can immediately see the error detail in the output panel without having to scroll through the list to find which file failed.
+
+### Improved — export toast shows folder + filename
+- The "Saved" notification after export now shows the parent folder and filename together (e.g. `Documents/output.md`) instead of just the filename. On a machine where files can be saved to many different locations, this makes it immediately clear where the file landed without needing to open a file manager.
+
+---
+
 ## [v4.10.12] — 2026-06-26
 
 ### Improved — low-end hardware: remove GPU-expensive backdrop blur

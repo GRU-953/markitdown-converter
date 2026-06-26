@@ -71,13 +71,13 @@ async function start() {
   if (cfgRes.status === "fulfilled") cfg = Object.assign(cfg, cfgRes.value);
   LOCALES = locRes.status === "fulfilled" ? locRes.value : {};
   if (platRes.status === "fulfilled") platform = platRes.value;
-  if (sysRes.status === "fulfilled") {
+  if (sysRes.status === "fulfilled" && sysRes.value) {
     cpuCount = sysRes.value.cpu_count || 1;
-    if (sysRes.value.is_low_end) {
-      isLowEnd = true;
-      document.documentElement.setAttribute("data-perf", "low");
-    }
+    isLowEnd = sysRes.value.is_low_end ?? (cpuCount <= 2);
+  } else {
+    cpuCount = 1; isLowEnd = true;
   }
+  if (isLowEnd) document.documentElement.setAttribute("data-perf", "low");
   lang = (cfg.language === "bn") ? "bn" : "en";
   applyTheme(); applyPalette(); applyPlatform();
   wireNav(); wireMode(); wireLang(); wirePalette(); wireConvert(); wireBijoy();
@@ -348,7 +348,7 @@ async function convertAll() {
 
   // Scale concurrency to CPU cores: 1 on low-end; up to 4 on capable machines.
   // Conservative cap avoids memory pressure on typical consumer hardware.
-  const concurrency = isLowEnd ? 1 : Math.min(Math.max(1, Math.floor(cpuCount / 2)), 4);
+  const concurrency = isLowEnd ? 1 : Math.min(Math.max(1, Math.floor(cpuCount / 2)), 2);
 
   async function convertOne(f) {
     f.status = "doing"; f.error = ""; renderFiles();
@@ -394,6 +394,10 @@ async function convertAll() {
   if (warn) parts.push(t("convert.result.empty", { count: warn }));
   if (err)  parts.push(t("convert.result.failed", { count: err }));
   toast(parts.join(", "), err ? "err" : warn ? "warn" : "ok");
+  if (err > 0) {
+    const firstErr = files.findIndex(f => f.status === "error");
+    if (firstErr >= 0) selectFile(firstErr);
+  }
 }
 function retryFailed() { convertAll(); }
 
@@ -504,8 +508,10 @@ async function exportCurrent() {
   if (!fmt) return;
   const base = f.name.replace(/\.[^.]+$/, "");
   const res = await api().export_text(f.text, fmt, `${base}.${fmt}`);
-  if (res.ok) toast(t("toast.saved", { name: res.path.split(/[\\/]/).pop() }), "ok");
-  else if (!res.cancelled) toast(res.error || t("toast.exportFailed"), "err");
+  if (res.ok) {
+    const segs = res.path.split(/[\\/]/);
+    toast(t("toast.saved", { name: segs.length > 1 ? segs.slice(-2).join("/") : segs[0] }), "ok");
+  } else if (!res.cancelled) toast(res.error || t("toast.exportFailed"), "err");
 }
 async function exportAll() {
   const done = files.filter(f => f.status === "done" && f.text);
@@ -643,8 +649,10 @@ async function copyText(txt) {
 async function saveText(txt, name) {
   if (!txt) return toast(t("toast.nothingToSave"), "err");
   const res = await api().export_text(txt, "txt", name);
-  if (res.ok) toast(t("toast.saved", { name: res.path.split(/[\\/]/).pop() }), "ok");
-  else if (!res.cancelled) toast(res.error || t("toast.saveFailed"), "err");
+  if (res.ok) {
+    const segs = res.path.split(/[\\/]/);
+    toast(t("toast.saved", { name: segs.length > 1 ? segs.slice(-2).join("/") : segs[0] }), "ok");
+  } else if (!res.cancelled) toast(res.error || t("toast.saveFailed"), "err");
 }
 function setupDrop(el, onClick, onPaths) {
   el.addEventListener("dragover", e => { e.preventDefault(); el.classList.add("drag"); });

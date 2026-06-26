@@ -23,7 +23,7 @@ from bijoy_unicode import convert_bijoy_to_unicode, detect_script
 # init until first actual OCR call so the window opens faster on startup.
 from pipeline import convert_file, is_image, is_pdf, is_legacy_doc
 
-APP_VERSION = "v4.10.12"
+APP_VERSION = "v4.10.13"
 MAX_FILE_BYTES = 200 * 1024 * 1024  # 200 MB hard limit
 _RELEASES_API = "https://api.github.com/repos/GRU-953/gru953-markdown/releases/latest"
 
