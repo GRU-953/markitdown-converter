@@ -773,6 +773,23 @@ class TestExtractXlsxDirect:
         f.write_bytes(b"dummy")
         assert _extract_xlsx_direct(str(f)) == ""
 
+    def test_rows_with_different_widths_are_padded(self, tmp_path, monkeypatch):
+        """Rows with fewer columns than the max are padded with empty strings so GFM table is valid."""
+        import sys
+        sheet = self._make_sheet("S", [
+            ("A", "B", "C"),   # 3 columns (widest row → max_cols = 3)
+            ("X",),            # only 1 column — must be padded to 3
+        ])
+        fake_mod = self._make_fake_openpyxl([sheet])
+        monkeypatch.setitem(sys.modules, "openpyxl", fake_mod)
+        f = tmp_path / "padded.xlsx"
+        f.write_bytes(b"dummy")
+        result = _extract_xlsx_direct(str(f))
+        # Data row must have 3 cells (padded) — check the raw row line
+        lines = result.strip().split("\n")
+        data_row = lines[2]  # header | sep | data
+        assert data_row == "| X |  |  |"
+
     def test_multi_sheet_blank_title_no_heading(self, tmp_path, monkeypatch):
         """Multi-sheet workbook where sheet titles are blank → no H2 headings emitted."""
         import sys
@@ -894,6 +911,30 @@ class TestExtractLegacyDoc:
             def exists(self, name): return name in ("WordDocument", "0Table")
             def openstream(self, name):
                 return FakeStream(binary if name == "WordDocument" else tdata)
+
+        fake_mod = type("olefile", (), {"OleFileIO": FakeOleFileIO})
+        monkeypatch.setitem(sys.modules, "olefile", fake_mod)
+        assert _extract_legacy_doc("x.doc") == ""
+
+    def test_fallback_scan_overflow_returns_empty(self, monkeypatch):
+        """When fallback scan's best_off + cc_text exceeds data length, returns empty string."""
+        import struct as _struct
+        # 55-byte stream: fib_end lands at 40, scan range is empty (min(55-20,...)=35<40),
+        # so best_off stays at 40; text_start+cc_text=60>55 → guard fires → return "".
+        binary = bytearray(55)
+        _struct.pack_into("<I", binary, 48, 20)  # cc_text = 20 (< 55, passes early check)
+        binary = bytes(binary)
+
+        class FakeStream:
+            def __init__(self, data): self._data = data
+            def read(self): return self._data
+
+        class FakeOleFileIO:
+            def __init__(self, path): pass
+            def __enter__(self): return self
+            def __exit__(self, *a): pass
+            def exists(self, name): return name == "WordDocument"  # no table stream
+            def openstream(self, name): return FakeStream(binary)
 
         fake_mod = type("olefile", (), {"OleFileIO": FakeOleFileIO})
         monkeypatch.setitem(sys.modules, "olefile", fake_mod)

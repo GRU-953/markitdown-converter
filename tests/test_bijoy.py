@@ -248,6 +248,16 @@ class TestConvertBijoyToUnicode:
         assert len(result) > 0
         assert all(0x0980 <= ord(c) <= 0x09FF for c in result)
 
+    def test_nukta_before_halant_consonant_reordered(self):
+        """_rearrange Pass 1: ঁ (nukta/chandrabindu) before ্ + consonant is reordered to ্ + consonant + ঁ."""
+        # Sequence: consonant + nukta + halant + consonant
+        # At halant position: _is_nukta(text[i-1]) is True → reorder fires:
+        # [i-1]=ঁ [i]=্ [i+1]=ক → [i-1]=্ [i]=ক [i+1]=ঁ
+        before = "ক" + "ঁ" + "্" + "গ"   # ক + chandrabindu + halant + গ
+        result = _rearrange(before)
+        # The nukta is moved AFTER the halant-consonant pair
+        assert result.index("্") < result.index("ঁ")
+
     def test_reph_preceded_by_halant_not_repositioned(self):
         """_rearrange Pass 1: when র is preceded by ্ (halant), reph guard fires → no repositioning."""
         # ক্র্গ = ক + ্ + র + ্ + গ: র is in the interior of a conjunct (halant before র).

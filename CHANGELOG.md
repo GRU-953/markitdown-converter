@@ -4,6 +4,16 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.60] — 2026-06-27
+
+### Tests — xlsx padding, legacy doc overflow, bijoy nukta (294 total, up from 291)
+
+- `TestExtractXlsxDirect.test_rows_with_different_widths_are_padded`: rows with fewer columns than the sheet maximum are padded with empty strings so the GFM table is well-formed
+- `TestExtractLegacyDoc.test_fallback_scan_overflow_returns_empty`: when the fallback ASCII scan's `best_off + cc_text` exceeds the stream length, the final guard fires and returns `""`
+- `TestConvertBijoyToUnicode.test_nukta_before_halant_consonant_reordered`: Pass 1 of `_rearrange` — `_is_nukta(text[i-1])` True branch; chandrabindu (ঁ) before a halant-consonant pair is reordered so the halant-consonant comes first
+
+---
+
 ## [v4.10.59] — 2026-06-27
 
 ### Tests — legacy doc + ocr_engine branch coverage (291 total, up from 288)
