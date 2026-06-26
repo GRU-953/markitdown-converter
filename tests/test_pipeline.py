@@ -396,6 +396,33 @@ class TestRtf:
         assert "rtf" in out["steps"]
         assert out["text"] == "fallback text"
 
+    def test_rtf_striprtf_exception_falls_back_to_markitdown(self, tmp_path, monkeypatch):
+        """When _rtf_to_text() raises, the exception is silenced and MarkItDown is used."""
+        f = tmp_path / "broken.rtf"
+        f.write_bytes(b"dummy")
+        monkeypatch.setattr(pipeline, "_STRIPRTF_AVAILABLE", True)
+        monkeypatch.setattr(pipeline, "_rtf_to_text", lambda raw: (_ for _ in ()).throw(ValueError("bad rtf")))
+        md = FakeMarkItDown("recovered text")
+        out = convert_file(str(f), markitdown=md)
+        assert "rtf" in out["steps"]
+        assert out["text"] == "recovered text"
+
+    def test_rtf_both_paths_fail_yields_rtf_empty(self, tmp_path, monkeypatch):
+        """When both _rtf_to_text and MarkItDown fail, 'rtf_empty' appears in steps."""
+        f = tmp_path / "unreadable.rtf"
+        f.write_bytes(b"dummy")
+        monkeypatch.setattr(pipeline, "_STRIPRTF_AVAILABLE", True)
+        monkeypatch.setattr(pipeline, "_rtf_to_text", lambda raw: (_ for _ in ()).throw(ValueError("bad")))
+
+        class BrokenMD:
+            def convert(self, path):
+                raise RuntimeError("unreadable")
+
+        out = convert_file(str(f), markitdown=BrokenMD())
+        assert "rtf" in out["steps"]
+        assert "rtf_empty" in out["steps"]
+        assert out["text"] == ""
+
 
 class TestImageOcrDisabled:
     def test_image_ocr_disabled(self, tmp_path):

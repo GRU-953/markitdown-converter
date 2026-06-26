@@ -4,6 +4,18 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.40] — 2026-06-27
+
+### Tests — RTF exception-silencing branches (215 total, up from 213)
+
+Closed two silent-swallow branches in the RTF path of `convert_file()`:
+
+`TestRtf` (pipeline):
+- `test_rtf_striprtf_exception_falls_back_to_markitdown`: when `_rtf_to_text()` raises, the `except Exception: pass` at pipeline.py:485 silences it and the MarkItDown fallback produces the final text
+- `test_rtf_both_paths_fail_yields_rtf_empty`: when both striprtf and MarkItDown raise, both exceptions are silenced → `"rtf_empty"` in steps, `text = ""`
+
+---
+
 ## [v4.10.39] — 2026-06-27
 
 ### Tests — PDF and .doc exception path coverage (213 total, up from 211)
