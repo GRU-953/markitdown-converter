@@ -136,6 +136,7 @@
   "step.pdf_empty": "PDF-এ কোনো লেখা নেই",
   "step.image_ocr_disabled": "OCR নিষ্ক্রিয়",
   "step.rtf": "RTF নিষ্কাশন",
+  "step.rtf_empty": "RTF-এ কোনো লেখা নেই",
   "step.xlsx_direct": "Excel (সরাসরি পঠন)",
   "step.xlsx_empty": "স্প্রেডশিটে কোনো লেখা নেই",
   "step.plaintext": "সাধারণ লেখা",

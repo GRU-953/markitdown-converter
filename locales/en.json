@@ -136,6 +136,7 @@
   "step.pdf_empty": "No text in PDF",
   "step.image_ocr_disabled": "OCR disabled",
   "step.rtf": "RTF extract",
+  "step.rtf_empty": "No text in RTF",
   "step.xlsx_direct": "Excel (direct read)",
   "step.xlsx_empty": "No text in spreadsheet",
   "step.plaintext": "Plain text",

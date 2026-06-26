@@ -11,7 +11,10 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import pipeline
-from pipeline import convert_file, is_image, is_legacy_doc, is_unsupported, is_rtf, is_xlsx, is_plain_text
+from pipeline import (
+    convert_file, is_image, is_legacy_doc, is_unsupported, is_rtf, is_xlsx, is_plain_text,
+    _read_plain_text, _extract_xlsx_direct,
+)
 
 
 # ── fakes ───────────────────────────────────────────────────────────────────
@@ -432,3 +435,154 @@ class TestPlainText:
         out = convert_file(str(f), markitdown=ExplodingMarkItDown(), auto_bijoy=False)
         assert "plaintext" in out["steps"]
         assert "# Notes" in out["text"]
+
+
+# ── _read_plain_text encoding fallback ──────────────────────────────────────
+
+class TestReadPlainTextEncoding:
+    def test_cp1252_fallback(self, tmp_path):
+        """cp1252 bytes invalid in UTF-8 must be decoded via cp1252 fallback."""
+        # 0x93 / 0x94 are Windows smart-quotes — valid cp1252, invalid UTF-8
+        f = tmp_path / "wintext.txt"
+        f.write_bytes(b"Hello \x93world\x94")
+        text = _read_plain_text(str(f))
+        assert "“" in text   # U+201C left double quotation mark
+        assert "”" in text   # U+201D right double quotation mark
+        assert "world" in text
+
+    def test_utf8_sig_bom(self, tmp_path):
+        """Files with UTF-8 BOM must decode cleanly (no BOM in result text)."""
+        f = tmp_path / "bom.txt"
+        f.write_bytes(b"\xef\xbb\xbfHello BOM")
+        text = _read_plain_text(str(f))
+        assert text == "Hello BOM"
+
+
+# ── rtf_empty step ────────────────────────────────────────────────────────────
+
+class TestRtfEmpty:
+    def test_rtf_empty_step_when_both_extractors_return_empty(self, tmp_path, monkeypatch):
+        """When striprtf AND MarkItDown both return empty, 'rtf_empty' must appear."""
+        f = tmp_path / "empty.rtf"
+        f.write_bytes(b"dummy")
+        monkeypatch.setattr(pipeline, "_STRIPRTF_AVAILABLE", True)
+        monkeypatch.setattr(pipeline, "_rtf_to_text", lambda raw: "")
+        md = FakeMarkItDown("")
+        out = convert_file(str(f), markitdown=md)
+        assert "rtf" in out["steps"]
+        assert "rtf_empty" in out["steps"]
+        assert out["text"] == ""
+
+    def test_rtf_no_empty_step_when_text_found(self, tmp_path, monkeypatch):
+        """'rtf_empty' must NOT appear when text is successfully extracted."""
+        f = tmp_path / "report.rtf"
+        f.write_bytes(b"dummy")
+        monkeypatch.setattr(pipeline, "_STRIPRTF_AVAILABLE", True)
+        monkeypatch.setattr(pipeline, "_rtf_to_text", lambda raw: "extracted text")
+        out = convert_file(str(f), auto_bijoy=False)
+        assert "rtf" in out["steps"]
+        assert "rtf_empty" not in out["steps"]
+
+
+# ── xlsx_empty step ──────────────────────────────────────────────────────────
+
+class TestXlsxEmpty:
+    def test_xlsx_empty_step_when_extraction_returns_empty(self, tmp_path, monkeypatch):
+        """When all XLSX extraction returns empty, 'xlsx_empty' must appear in steps."""
+        f = tmp_path / "blank.xlsx"
+        f.write_bytes(b"dummy")
+        monkeypatch.setattr(pipeline, "_extract_xlsx_direct", lambda path: "")
+        out = convert_file(str(f), markitdown=FakeMarkItDown(""))
+        assert "xlsx_empty" in out["steps"]
+        assert out["text"] == ""
+
+    def test_xlsx_no_empty_step_when_text_found(self, tmp_path, monkeypatch):
+        """'xlsx_empty' must NOT appear when MarkItDown returns text."""
+        f = tmp_path / "data.xlsx"
+        f.write_bytes(b"dummy")
+        out = convert_file(str(f), markitdown=FakeMarkItDown("| a | b |\n| --- | --- |\n| 1 | 2 |"))
+        assert "xlsx_empty" not in out["steps"]
+
+
+# ── _extract_xlsx_direct unit tests ──────────────────────────────────────────
+
+class TestExtractXlsxDirect:
+    def _make_fake_openpyxl(self, worksheets):
+        class FakeWorkbook:
+            def __init__(self):
+                self.worksheets = worksheets
+            def close(self):
+                pass
+
+        return type("openpyxl", (), {
+            "load_workbook": staticmethod(lambda *a, **kw: FakeWorkbook()),
+        })
+
+    def _make_sheet(self, title, rows):
+        class FakeSheet:
+            pass
+        s = FakeSheet()
+        s.title = title
+        s.iter_rows = lambda values_only=True: iter(rows)
+        return s
+
+    def test_single_sheet_gfm_table(self, tmp_path, monkeypatch):
+        """Single-sheet workbook produces a GFM table: header | sep | data rows."""
+        import sys
+        sheet = self._make_sheet("Sheet1", [
+            ("Name", "Age"),
+            ("Alice", 30),
+            ("Bob", None),
+        ])
+        fake_mod = self._make_fake_openpyxl([sheet])
+        monkeypatch.setitem(sys.modules, "openpyxl", fake_mod)
+
+        f = tmp_path / "data.xlsx"
+        f.write_bytes(b"dummy")
+        result = _extract_xlsx_direct(str(f))
+        lines = result.strip().split("\n")
+
+        assert lines[0] == "| Name | Age |"
+        assert lines[1] == "| --- | --- |"
+        assert lines[2] == "| Alice | 30 |"
+        assert lines[3] == "| Bob |  |"
+
+    def test_multi_sheet_adds_h2_headings(self, tmp_path, monkeypatch):
+        """Multi-sheet workbooks get an H2 heading per sheet."""
+        import sys
+        sheets = [
+            self._make_sheet("Sales", [("Q1", "Q2"), ("100", "200")]),
+            self._make_sheet("Costs", [("Item",), ("50",)]),
+        ]
+        fake_mod = self._make_fake_openpyxl(sheets)
+        monkeypatch.setitem(sys.modules, "openpyxl", fake_mod)
+
+        f = tmp_path / "multi.xlsx"
+        f.write_bytes(b"dummy")
+        result = _extract_xlsx_direct(str(f))
+        assert "## Sales" in result
+        assert "## Costs" in result
+
+    def test_pipe_chars_escaped(self, tmp_path, monkeypatch):
+        """Pipe characters inside cell values must be escaped as \\|."""
+        import sys
+        sheet = self._make_sheet("S", [("A|B", "C")])
+        fake_mod = self._make_fake_openpyxl([sheet])
+        monkeypatch.setitem(sys.modules, "openpyxl", fake_mod)
+
+        f = tmp_path / "pipes.xlsx"
+        f.write_bytes(b"dummy")
+        result = _extract_xlsx_direct(str(f))
+        assert "A\\|B" in result
+
+    def test_empty_sheet_skipped(self, tmp_path, monkeypatch):
+        """Sheets with no non-empty rows produce no output."""
+        import sys
+        sheet = self._make_sheet("Empty", [("", ""), (None, None)])
+        fake_mod = self._make_fake_openpyxl([sheet])
+        monkeypatch.setitem(sys.modules, "openpyxl", fake_mod)
+
+        f = tmp_path / "empty.xlsx"
+        f.write_bytes(b"dummy")
+        result = _extract_xlsx_direct(str(f))
+        assert result == ""

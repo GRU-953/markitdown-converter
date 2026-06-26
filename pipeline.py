@@ -238,7 +238,7 @@ def is_plain_text(path) -> bool:
 def _read_plain_text(path: str) -> str:
     """Decode a plain-text file trying common encodings in order."""
     p = Path(path)
-    for enc in ("utf-8", "utf-8-sig", "cp1252", "latin-1"):
+    for enc in ("utf-8-sig", "utf-8", "cp1252", "latin-1"):
         try:
             return p.read_text(encoding=enc)
         except (UnicodeDecodeError, LookupError):
@@ -364,6 +364,8 @@ def convert_file(
             except Exception:
                 text = ""
         steps.append("rtf")
+        if not text.strip():
+            steps.append("rtf_empty")
     elif is_xlsx(p):
         # XLSX ≥ 2 MB: MarkItDown's table formatter builds the full sheet in
         # memory and can hang indefinitely on survey-style files (no exception raised).

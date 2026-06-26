@@ -4,6 +4,22 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.20] — 2026-06-26
+
+### Fixed — RTF "no text" status was never reported
+- When both the striprtf extractor and the MarkItDown fallback returned empty text for an RTF file, the file was silently marked as converted with no warning. It now correctly reports the `rtf_empty` step, which turns the file status yellow (warning) in the file list — matching the behaviour of all other format branches (PDF, DOC, OCR, XLSX, plain text). The i18n strings "No text in RTF" / "RTF-এ কোনো লেখা নেই" are added to both locales.
+
+### Fixed — UTF-8 BOM files: byte-order mark was preserved in output
+- Plain-text files written by Windows editors with a UTF-8 BOM (`.txt`, `.md`, `.csv`, etc.) previously decoded using plain `utf-8`, which does not strip the BOM character (U+FEFF). The encoding trial order in `_read_plain_text()` is now `utf-8-sig` → `utf-8` → `cp1252` → `latin-1`, so the BOM is always stripped before the text reaches the output panel or export.
+
+### Tests — 10 new test cases (144 total, up from 134)
+- `TestReadPlainTextEncoding`: cp1252 fallback and UTF-8 BOM stripping
+- `TestRtfEmpty`: `rtf_empty` step when both extractors return empty; step absent when text is found
+- `TestXlsxEmpty`: `xlsx_empty` step when XLSX extraction returns empty; step absent when text is found
+- `TestExtractXlsxDirect`: GFM table format, multi-sheet H2 headings, pipe escaping, empty-sheet skipping
+
+---
+
 ## [v4.10.19] — 2026-06-26
 
 ### Removed — dead code cleanup (utils.py)

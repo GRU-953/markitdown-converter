@@ -406,7 +406,7 @@ async function convertAll() {
 function retryFailed() { convertAll(); }
 
 function stepLabel(s) { return t("step." + s); }
-const EMPTY_STEPS = new Set(["ocr_empty", "doc_empty", "pdf_empty", "image_ocr_disabled", "xlsx_empty", "plaintext_empty"]);
+const EMPTY_STEPS = new Set(["ocr_empty", "doc_empty", "pdf_empty", "image_ocr_disabled", "xlsx_empty", "plaintext_empty", "rtf_empty"]);
 const STAT_ICON = {
   pending: "ti-circle", doing: "ti-loader-2",
   done: "ti-circle-check", warn: "ti-alert-triangle", error: "ti-alert-circle",
