@@ -4,6 +4,24 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.0] — 2026-06-26
+
+### Performance — faster startup
+- **Lazy OCR imports**: `ocr_engine` (which loads `pytesseract` and `Pillow`) is no longer imported at module level in `pipeline.py` or `app.py`. The import now happens inside the first function call that actually needs OCR. On typical usage (converting Word/PDF/XLSX files) OCR is never triggered at all, so `pytesseract` + `Pillow` never load. Result: noticeably faster window-open time, especially on low-end hardware.
+
+### Platform readiness — macOS
+- **`ocr_engine._setup_tesseract()` is now platform-aware**: the Windows-specific Tesseract paths (`C:\Program Files\Tesseract-OCR`) are now guarded by `sys.platform == "win32"`. On macOS and Linux the function exits cleanly and relies on the system PATH (Homebrew/apt install). No functional change on Windows.
+- **New `Api.get_platform()` bridge method**: returns `"windows"`, `"darwin"`, or the raw `sys.platform` string. Used by the frontend to conditionally show or hide OS-specific settings.
+- **Windows colours hidden on non-Windows**: the Settings panel now hides the "Windows colours" toggle when running on macOS or Linux via the new `applyPlatform()` JS function and `.win-only` CSS class. The setting is inert on those platforms anyway; hiding it avoids confusion.
+- **New `Api.get_system_info()` bridge method**: returns `{cpu_count, is_low_end}` — a lightweight hook for future adaptive behaviour (e.g. capping concurrency on single-core machines).
+
+### README — full redesign
+- Rewritten for non-technical users: plain language, step-by-step instructions, full Settings table, FAQ section, and accurate feature descriptions throughout.
+- Fixed: "language toggle at the top" → now correctly describes Settings.
+- Added: Windows colours feature, Settings table, History tab, FAQ.
+
+---
+
 ## [v4.9.0] — 2026-06-26
 
 ### Removed — Scan tab

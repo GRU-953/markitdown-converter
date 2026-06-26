@@ -4,6 +4,7 @@
 let cfg = { theme: "System", palette: "indigo", language: "en",
             ocr_language: "English", auto_ocr: true, auto_bijoy: true,
             use_windows_colors: false };
+let platform = "windows"; // updated during start(); defaults to windows for safety
 let files = [];          // {path, name, is_image, status, text, steps, error}
 let selected = -1;
 let outMode = "preview"; // preview | edit
@@ -63,8 +64,9 @@ function boot() {
 async function start() {
   try { cfg = Object.assign(cfg, await api().get_config()); } catch (e) {}
   try { LOCALES = await api().get_locales(); } catch (e) { LOCALES = {}; }
+  try { platform = await api().get_platform(); } catch (e) {}
   lang = (cfg.language === "bn") ? "bn" : "en";
-  applyTheme(); applyPalette();
+  applyTheme(); applyPalette(); applyPlatform();
   wireNav(); wireMode(); wireLang(); wirePalette(); wireConvert(); wireBijoy();
   wireHistory(); wireSettings(); wireOffline();
   syncSettingsControls();
@@ -154,6 +156,12 @@ async function applyWindowsColors() {
     root.style.setProperty("--on-primary", onPrimary);
     root.style.setProperty("--focus-ring", `rgba(${r},${g},${b},0.5)`);
   } catch (e) {}
+}
+
+function applyPlatform() {
+  document.querySelectorAll(".win-only").forEach(el => {
+    el.style.display = platform === "windows" ? "" : "none";
+  });
 }
 
 /* ── Offline awareness ──────────────────────────────────────────────────────── */

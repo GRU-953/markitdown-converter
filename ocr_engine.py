@@ -14,7 +14,7 @@ from PIL import Image
 def _setup_tesseract():
     """Point pytesseract at the correct Tesseract binary and tessdata."""
     if getattr(sys, "_MEIPASS", None):
-        # Running from PyInstaller bundle
+        # PyInstaller bundle (Windows build only for now)
         base = Path(sys._MEIPASS) / "tesseract"
         exe  = base / "tesseract.exe"
         data = base / "tessdata"
@@ -22,14 +22,14 @@ def _setup_tesseract():
             pytesseract.pytesseract.tesseract_cmd = str(exe)
         if data.exists():
             os.environ["TESSDATA_PREFIX"] = str(data)
-    else:
-        # Development: use system Tesseract
+    elif sys.platform == "win32":
         system_exe = Path(r"C:\Program Files\Tesseract-OCR\tesseract.exe")
         if system_exe.exists():
             pytesseract.pytesseract.tesseract_cmd = str(system_exe)
         system_data = Path(r"C:\Program Files\Tesseract-OCR\tessdata")
         if system_data.exists():
             os.environ.setdefault("TESSDATA_PREFIX", str(system_data))
+    # On macOS/Linux: Tesseract installed via Homebrew/apt lands on system PATH.
 
 
 _setup_tesseract()

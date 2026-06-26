@@ -19,10 +19,11 @@ import webview
 
 import settings as _settings
 from bijoy_unicode import convert_bijoy_to_unicode, detect_script
-from ocr_engine import ocr_image, ocr_pdf, tesseract_available, pymupdf_available
+# ocr_engine imported lazily inside each Api method — defers pytesseract + PIL
+# init until first actual OCR call so the window opens faster on startup.
 from pipeline import convert_file, is_image, is_pdf, is_legacy_doc
 
-APP_VERSION = "v4.9.0"
+APP_VERSION = "v4.10.0"
 MAX_FILE_BYTES = 200 * 1024 * 1024  # 200 MB hard limit
 _RELEASES_API = "https://api.github.com/repos/GRU-953/gru953-markdown/releases/latest"
 
@@ -179,6 +180,7 @@ class Api:
 
     def ocr(self, path: str, language: str, auto_bijoy: bool) -> dict:
         try:
+            from ocr_engine import tesseract_available, pymupdf_available, ocr_image, ocr_pdf
             _validate_path(path)
             if not tesseract_available():
                 return {"ok": False, "error": "Tesseract OCR is not available."}
@@ -203,10 +205,18 @@ class Api:
         return detect_script((text or "")[:300])
 
     def tesseract_ok(self) -> bool:
-        return tesseract_available()
+        try:
+            from ocr_engine import tesseract_available
+            return tesseract_available()
+        except Exception:
+            return False
 
     def pymupdf_ok(self) -> bool:
-        return pymupdf_available()
+        try:
+            from ocr_engine import pymupdf_available
+            return pymupdf_available()
+        except Exception:
+            return False
 
     # ── Windows appearance ────────────────────────────────────────────────────
 
@@ -230,6 +240,21 @@ class Api:
             return {"ok": True, "hex": f"#{r:02X}{g:02X}{b:02X}"}
         except Exception as exc:
             return {"ok": False, "hex": "#0A6E5C", "error": str(exc)}
+
+    def get_platform(self) -> str:
+        """Return the OS platform: 'windows', 'darwin', or 'linux'."""
+        import sys as _sys
+        if _sys.platform == "win32":
+            return "windows"
+        if _sys.platform == "darwin":
+            return "darwin"
+        return _sys.platform
+
+    def get_system_info(self) -> dict:
+        """Return lightweight hardware capability hints for adaptive behaviour."""
+        import os as _os
+        cpu = _os.cpu_count() or 1
+        return {"cpu_count": cpu, "is_low_end": cpu <= 2}
 
     # ── export ────────────────────────────────────────────────────────────────
 

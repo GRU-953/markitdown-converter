@@ -21,7 +21,8 @@ import struct
 from pathlib import Path
 
 from bijoy_unicode import convert_bijoy_to_unicode, is_bijoy
-from ocr_engine import ocr_image, ocr_pdf
+# ocr_engine is imported lazily inside convert_file — defers pytesseract + PIL init
+# to the first conversion that actually needs OCR, keeping startup lean.
 
 IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".bmp", ".tiff", ".tif", ".gif", ".webp"}
 PDF_EXT = ".pdf"
@@ -279,8 +280,10 @@ def convert_file(
         # B-4: image with OCR disabled — nothing to extract
         return {"text": "", "steps": ["image_ocr_disabled"]}
     elif auto_ocr and is_image(p):
-        runner = ocr_func or ocr_image
-        text = runner(str(p), ocr_lang)
+        if ocr_func is None:
+            from ocr_engine import ocr_image as _ocr_image
+            ocr_func = _ocr_image
+        text = ocr_func(str(p), ocr_lang)
         steps.append("ocr")
         if not text.strip():
             steps.append("ocr_empty")
@@ -300,8 +303,10 @@ def convert_file(
         steps.append("markitdown")
         # Fall back to OCR if the PDF has no text layer
         if auto_ocr and not text.strip():
-            pdf_runner = ocr_pdf_func or ocr_pdf
-            text = pdf_runner(str(p), ocr_lang)
+            if ocr_pdf_func is None:
+                from ocr_engine import ocr_pdf as _ocr_pdf
+                ocr_pdf_func = _ocr_pdf
+            text = ocr_pdf_func(str(p), ocr_lang)
             steps = ["pdf_ocr"]
         # E-2: PDF with no text and OCR disabled (or OCR also returned empty)
         elif not text.strip() and "pdf_ocr" not in steps:

@@ -6,7 +6,7 @@
 
 **Turn any document into clean, readable text — in one click.**
 
-Word files, PDFs, spreadsheets, and images — converted instantly, with no technical knowledge needed.
+Word files, PDFs, spreadsheets, and images — converted instantly, right on your computer. No accounts, no subscriptions, no internet required.
 
 <br>
 
@@ -28,91 +28,126 @@ Word files, PDFs, spreadsheets, and images — converted instantly, with no tech
 
 > **[→ Click here to download GRU953 Markdown for Windows](https://github.com/GRU-953/gru953-markdown/releases/latest)**
 
-- Click the link above and download **GRU953Markdown.exe**
-- Double-click the file to open the app — **no installation needed**
-- If Windows shows a warning, click **More info → Run anyway** *(this is normal for new apps)*
+On the download page, look for the file named **GRU953Markdown-Setup.exe** and click it.
 
-Runs on **Windows 10 and Windows 11** (64-bit). No Python, no extra software, no accounts.
+- **Double-click the installer** — it sets up the app in seconds
+- Or download **GRU953Markdown.exe** (the portable version) to run it directly with no installation at all
+- If Windows shows a blue warning screen, click **More info → Run anyway** — this is normal for new apps and is safe
+
+Runs on **Windows 10 and Windows 11** (64-bit). No Python, no extra software, no technical setup needed.
 
 ---
 
-## 🚀 Three steps to get started
+## 🚀 How to use it — three steps
 
-### 1 · Open the app
-Double-click **GRU953Markdown.exe**. It opens in a few seconds on first launch.
+### Step 1 · Open the app
+Double-click the app icon. It will open in a few seconds.
 
-### 2 · Drop your file
-Drag any document onto the app window — or click inside the drop area to browse your files.
-You can add **multiple files** at once.
+### Step 2 · Add your files
+- **Drag and drop** any document onto the large drop area in the middle of the screen, or
+- **Click inside the drop area** to browse your files normally
+- You can add **multiple files at once** — mix documents, PDFs, and images together
 
-### 3 · Copy or save
-Click **Convert all**. Your text is ready in seconds.
-- **Copy** it straight to your clipboard
-- **Export** to save as a `.md`, `.txt`, or `.html` file
+### Step 3 · Convert and save
+Click the **Convert all** button. Your text is ready almost instantly.
 
-That's everything. No sign-up, no internet needed, no subscription.
+- Click **Copy** to put the text straight on your clipboard — then paste it anywhere
+- Click **Export** to save it as a file — you can choose Markdown (`.md`), plain text (`.txt`), or a web page (`.html`)
+- Click **Export all** to combine everything into a single file
+
+That is all. No sign-up, no internet connection needed, no subscription.
 
 ---
 
 ## 📄 What files does it work with?
 
-| What you have | What to drop in |
+Drop any of these in and get clean, readable text out:
+
+| What you have | File type |
 |---|---|
 | Word documents | `.docx`, `.doc` |
 | PDF files | `.pdf` |
-| PowerPoint slides | `.pptx` |
+| PowerPoint presentations | `.pptx` |
 | Excel spreadsheets | `.xlsx`, `.xls` |
-| Images with text | `.png`, `.jpg`, `.jpeg`, `.tiff`, `.bmp`, `.gif`, `.webp` |
+| Photos and scanned pages | `.png`, `.jpg`, `.jpeg`, `.tiff`, `.bmp`, `.gif`, `.webp` |
 | Web pages saved as files | `.html` |
 | Data files | `.csv`, `.json`, `.xml` |
 | Compressed folders | `.zip` |
 | Old-format text | `.rtf`, `.txt` |
 
-> **Images are handled automatically.** Drop a photo or a scanned page and the app reads the text for you — no extra steps.
+> **Images and scanned documents are handled automatically.** Drop a photo of a printed page or a scanned document, and the app reads the text for you using built-in OCR — no extra steps needed.
 
 ---
 
 ## 🔤 Bengali / Bangla support
 
-GRU953 Markdown understands old Bangla computer fonts that are common in older documents from Bangladesh.
+GRU953 Markdown understands old Bangla computer fonts that are common in documents from Bangladesh. If your file was typed using a legacy Bangla font like **Bijoy** or **SutonnyMJ**, the app automatically converts the text to proper Unicode so it displays and copies correctly in any app, browser, or document.
 
-If your file uses a legacy Bangla font (Bijoy or SutonnyMJ), the app **automatically converts** the text to proper Unicode so it displays correctly in any app, website, or document.
-
-There is also a dedicated **Bangla** tab where you can paste text and convert it directly — useful if you have copied text from an older source.
+There is also a dedicated **Bangla tab** in the sidebar. Open it to paste Bangla text directly and convert it to Unicode on the spot — useful when you have copied text from an older source or website.
 
 ---
 
-## 🎨 Themes
+## ⚙️ Settings and customisation
 
-Go to **Settings** to change how the app looks:
+Click the **Settings** icon at the bottom of the left sidebar to personalise your experience.
 
-| Theme | Mood |
+| Setting | What it does |
+|---|---|
+| **Language** | Switch the whole app between English and বাংলা instantly |
+| **Appearance mode** | Choose Light, Dark, or Auto (follows your system setting) |
+| **Windows colours** | Use your Windows accent colour as the app's theme colour |
+| **Colour theme** | Pick one of three colour palettes — Teal, Indigo, or Amber |
+| **Auto-OCR** | Automatically read text from image files when you convert them |
+| **Auto Bijoy** | Automatically detect and convert Bijoy-encoded text |
+| **Default OCR language** | Set English, Bangla, or Both for image text recognition |
+
+---
+
+## 🎨 Colour themes
+
+Three built-in themes, each available in light and dark mode:
+
+| Theme | Personality |
 |---|---|
 | **GRU953 Teal** | Fresh and clean — the default |
 | **GRU953 Indigo** | Deep and focused |
 | **GRU953 Amber** | Warm and energetic |
 
-Every theme works in both **Light** and **Dark** mode. Switch anytime — your choice is saved.
+On Windows, you can also turn on **Windows colours** in Settings to use your system accent colour automatically — the app follows your Windows personalisation settings and switches between light and dark with your system.
 
 ---
 
-## 🌐 English & বাংলা
+## 💾 Conversion history
 
-The whole app speaks both **English** and **Bangla**. Use the language toggle at the top to switch — every button, message, and label changes instantly, in proper Unicode Bangla.
+The **History tab** keeps a record of every file you have converted. You can see which files succeeded, which had warnings, and clear the list whenever you like.
 
 ---
 
-## ❓ Need help?
+## ❓ Frequently asked questions
 
-Something not converting correctly? Got a question?
+**The app won't open — Windows is blocking it.**
+Click **More info** on the Windows warning, then click **Run anyway**. This happens because the app is new and not yet widely recognised by Windows SmartScreen.
 
-👉 [Open an issue on GitHub](https://github.com/GRU-953/gru953-markdown/issues) — describe what happened and we will take a look.
+**My PDF converted but the text looks wrong.**
+The PDF may be a scanned image with no real text. Make sure **Auto-OCR** is turned on in Settings and try again — the app will read the image layer automatically.
+
+**The text came out garbled or in the wrong language.**
+If the file uses a legacy Bangla font (Bijoy/SutonnyMJ), the Auto Bijoy setting in Settings should fix it automatically. Make sure it is turned on.
+
+**Can I convert multiple files at once?**
+Yes. Drop as many files as you like into the drop area. They all convert together when you click Convert all.
+
+**Does the app send my files to the internet?**
+No. Everything happens entirely on your computer. Your files never leave your machine. The only internet access the app uses is to check for updates in the background, and that can be ignored entirely.
+
+**Something is not converting correctly. What do I do?**
+[Open an issue on GitHub](https://github.com/GRU-953/gru953-markdown/issues) — describe what happened, what file you tried, and what you expected. We will take a look.
 
 ---
 
 ## About GRU953
 
-GRU953 is a not-for-profit, open-source product organisation on a mission to make technology simple and accessible for everyone — with a home in Bangladesh. All GRU953 apps are free, open-source, and built openly with a global community.
+GRU953 is a not-for-profit, open-source product organisation on a mission to make technology simple and accessible for everyone — with a home in Bangladesh. All GRU953 apps are free, open-source, and built openly for the world.
 
 *Simple technology. For everyone.* &nbsp;·&nbsp; *সহজ প্রযুক্তি। সবার জন্য।*
 
