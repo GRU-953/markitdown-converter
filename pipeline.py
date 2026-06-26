@@ -159,6 +159,55 @@ def _extract_legacy_doc(path: str) -> str:
         return ""
 
 
+# Known Bijoy/SutonnyMJ font names (normalised: lowercase, whitespace collapsed,
+# comma-suffix stripped). Ported from Mukti's FontRegistry curated allowlist.
+# Only EXACT matches classify as Bijoy — no fuzzy MJ-suffix heuristic (Mukti
+# decision D-0006: NikoshMJ, TangonMotaMJ, SonkhoMJ are confirmed Unicode fonts).
+_BIJOY_FONTS = frozenset([
+    "sutonnymj", "sutonnymj bold", "sutonnymj italic",
+    "sutonnymj regular", "sutonnymj-regular", "sutonnymjbold",
+    "sutonny mj", "sutonnycmj", "sutonnyemj", "sutonnysushreemj",
+    "tonnybanglaj",
+    "gangamj", "padmamj", "jomunamj", "meghnamj",
+    "teeshtamj", "turagmj", "sandipanmj",
+    "jugantormj", "samakalmj", "jaijaidinmj",
+    "siyam rupali ansi",   # ANSI build only; plain "siyam rupali" is Unicode
+])
+
+_WS_RE = re.compile(r"\s+")
+
+
+def _docx_font_has_bijoy(path: str) -> bool:
+    """Return True if any run in the DOCX uses a known Bijoy font.
+
+    Peeks inside the DOCX ZIP, parses word/document.xml, and checks every
+    w:rFonts attribute value against the curated _BIJOY_FONTS list.
+    Normalisation mirrors Mukti's FontRegistry.Normalize: strip, lowercase,
+    collapse whitespace, drop everything from the first comma onward.
+    Returns False on any error (unreadable, not a ZIP, malformed XML).
+    """
+    import zipfile
+    import xml.etree.ElementTree as ET
+    try:
+        with zipfile.ZipFile(path, "r") as z:
+            if "word/document.xml" not in z.namelist():
+                return False
+            xml_bytes = z.read("word/document.xml")
+        root = ET.fromstring(xml_bytes)
+        ns = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+        for elem in root.iter(f"{{{ns}}}rFonts"):
+            for val in elem.attrib.values():
+                norm = _WS_RE.sub(" ", val.strip().lower())
+                comma = norm.find(",")
+                if comma >= 0:
+                    norm = norm[:comma].strip()
+                if norm in _BIJOY_FONTS:
+                    return True
+    except Exception:
+        pass
+    return False
+
+
 def is_image(path) -> bool:
     """Return True if *path* has a known raster-image extension."""
     return Path(path).suffix.lower() in IMAGE_EXTS
@@ -408,8 +457,15 @@ def convert_file(
             raise
         steps.append("markitdown")
 
-    if auto_bijoy and text and is_bijoy_func(text):
-        text = bijoy_func(text)
-        steps.append("bijoy")
+    if auto_bijoy and text:
+        needs_bijoy = is_bijoy_func(text)
+        # Font-assisted detection for DOCX: when text-scan misses pure-ASCII
+        # Bijoy text (simple consonants with no conjunct chars), the font name
+        # embedded in the DOCX metadata is a reliable secondary signal.
+        if not needs_bijoy and p.suffix.lower() == ".docx":
+            needs_bijoy = _docx_font_has_bijoy(str(p))
+        if needs_bijoy:
+            text = bijoy_func(text)
+            steps.append("bijoy")
 
     return {"text": text, "steps": steps}

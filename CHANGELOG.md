@@ -4,6 +4,42 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.26] — 2026-06-26
+
+### Improved — Bijoy detection: adaptive thresholds + DOCX font-name sniffing
+
+Ported detection improvements from Mukti's FontRegistry (https://github.com/GRU-953/Mukti):
+
+**`bijoy_unicode.detect_script()` — adaptive minimum threshold**
+- Short texts (≤ 30 significant chars): 2 Bijoy-range chars suffice (was: 5). Fixes missed detection on paste snippets, single-sentence captions, and any content shorter than ~30 characters.
+- Medium texts (31–100 chars): minimum raised to 3 (was: 5).
+- Long texts (> 100 chars): minimum stays at 5.
+- Relaxed ratio: `bj × 13 ≥ la` (≈ 7.7 % density) replaces `bj × 10` (10 %), catching Bijoy+Latin mixed documents at lower Bijoy density.
+
+**`pipeline._docx_font_has_bijoy()` — DOCX font-name detection**
+- New function reads `word/document.xml` inside the DOCX ZIP and checks `w:rFonts` attribute values against Mukti's curated Bijoy font allowlist (SutonnyMJ family, Ananda river-named fonts, Siyam Rupali ANSI, newspaper fonts).
+- Normalisation mirrors Mukti: lowercase, strip, collapse whitespace, drop comma-suffix style variants (`SutonnyMJ,Bold` → `sutonnymj`).
+- No MJ-suffix fuzzy matching (Mukti decision D-0006: NikoshMJ, TangonMotaMJ, SonkhoMJ are confirmed Unicode fonts).
+- `convert_file()` calls this as a secondary signal for `.docx` files when text-scan alone misses pure-ASCII Bijoy text (e.g. simple consonants like `evsjv` = বাংলা with no conjunct chars).
+
+### Tests — 10 new detection tests (163 total, up from 153)
+
+`TestDetectScript` (bijoy_unicode):
+- `test_short_bijoy_two_chars_no_latin`: bj=2, la=0, sig=2 → bijoy
+- `test_short_bijoy_two_chars_with_latin`: bj=2, la=3, sig=5 → bijoy (ratio 2×13≥3)
+- `test_medium_text_three_bijoy_chars`: bj=3, la=37, sig=40 → bijoy (old threshold failed)
+- `test_relaxed_ratio_catches_low_density`: bj=8, la=100 → bijoy (old 8×10=80<100 failed)
+- `test_two_distinct_bijoy_chars_no_latin`: © + ¨ → bijoy
+
+`TestDocxFontDetection` (pipeline):
+- `test_bijoy_font_detected`: SutonnyMJ → True
+- `test_bijoy_font_comma_suffix_detected`: SutonnyMJ,Bold strips to sutonnymj → True
+- `test_non_bijoy_font_returns_false`: Arial → False
+- `test_invalid_zip_returns_false`: non-ZIP → False (no raise)
+- `test_font_detection_triggers_bijoy_conversion`: ASCII-only Bijoy + font flag → bijoy step
+
+---
+
 ## [v4.10.25] — 2026-06-26
 
 ### Fixed — update download fallback used in-app window.open

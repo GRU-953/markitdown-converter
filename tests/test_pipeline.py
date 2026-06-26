@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 import pipeline
 from pipeline import (
     convert_file, is_image, is_legacy_doc, is_unsupported, is_rtf, is_xlsx, is_plain_text,
-    _read_plain_text, _extract_xlsx_direct, _extract_legacy_doc,
+    _read_plain_text, _extract_xlsx_direct, _extract_legacy_doc, _docx_font_has_bijoy,
 )
 
 
@@ -647,3 +647,55 @@ class TestExtractLegacyDoc:
         fake_mod = type("olefile", (), {"OleFileIO": FakeOleFileIO})
         monkeypatch.setitem(sys.modules, "olefile", fake_mod)
         assert _extract_legacy_doc("x.doc") == ""
+
+
+# ── DOCX font-name Bijoy detection ───────────────────────────────────────────
+
+class TestDocxFontDetection:
+    def _make_docx_with_font(self, tmp_path, font_name):
+        """Minimal DOCX ZIP containing one rFonts element with the given font name."""
+        import zipfile
+        docx_path = tmp_path / "test.docx"
+        xml = (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+            '<w:body><w:p><w:r>'
+            f'<w:rPr><w:rFonts w:ascii="{font_name}"/></w:rPr>'
+            '<w:t>evsjv</w:t>'
+            '</w:r></w:p></w:body></w:document>'
+        )
+        with zipfile.ZipFile(str(docx_path), "w") as z:
+            z.writestr("word/document.xml", xml)
+        return str(docx_path)
+
+    def test_bijoy_font_detected(self, tmp_path):
+        """SutonnyMJ is on the curated Bijoy allowlist → True."""
+        assert _docx_font_has_bijoy(self._make_docx_with_font(tmp_path, "SutonnyMJ")) is True
+
+    def test_bijoy_font_comma_suffix_detected(self, tmp_path):
+        """Comma-suffixed style variant 'SutonnyMJ,Bold' strips to 'sutonnymj' → True."""
+        assert _docx_font_has_bijoy(self._make_docx_with_font(tmp_path, "SutonnyMJ,Bold")) is True
+
+    def test_non_bijoy_font_returns_false(self, tmp_path):
+        """Arial is not a Bengali font → False."""
+        assert _docx_font_has_bijoy(self._make_docx_with_font(tmp_path, "Arial")) is False
+
+    def test_invalid_zip_returns_false(self, tmp_path):
+        """Non-ZIP file doesn't raise — just returns False."""
+        bad = tmp_path / "bad.docx"
+        bad.write_bytes(b"not a zip file at all")
+        assert _docx_font_has_bijoy(str(bad)) is False
+
+    def test_font_detection_triggers_bijoy_conversion(self, tmp_path, monkeypatch):
+        """ASCII-only Bijoy text + SutonnyMJ font → bijoy step even when text-scan fails."""
+        f = _touch(tmp_path, "bangla.docx")
+        monkeypatch.setattr(pipeline, "_docx_font_has_bijoy", lambda p: True)
+        out = convert_file(
+            str(f),
+            markitdown=FakeMarkItDown("evsjv"),   # ASCII-only: text-scan won't detect
+            auto_bijoy=True,
+            is_bijoy_func=lambda t: False,         # simulate text-scan miss
+            bijoy_func=lambda t: "বাংলা",
+        )
+        assert "bijoy" in out["steps"]
+        assert out["text"] == "বাংলা"

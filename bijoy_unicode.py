@@ -443,15 +443,22 @@ def detect_script(text: str) -> str:
     total = bn + bj + la
     if total == 0:
         return "other"
-    # A real Bijoy/SutonnyMJ file has ZERO Unicode Bengali codepoints (U+0980–U+09FF).
-    # It also has many characters from the Latin-1 Supplement range (conjunct consonants).
-    # English documents may have a few em-dashes/curly-quotes/© that fall in the bj range
-    # but are NOT Bijoy; require bj to be at least 10 % of the Latin ASCII count so that
-    # incidental punctuation in English text never triggers a false bijoy classification.
-    if bj >= 5 and bn == 0 and (la == 0 or bj * 10 >= la):
-        return "bijoy"
+    # Unicode Bengali codepoints (U+0980–U+09FF) are unambiguous — always win.
     if bn > 0:
         return "unicode_bn"
+    if bj == 0:
+        return "latin"
+    # Adaptive minimum threshold (ported from Mukti's detection analysis):
+    #   Short texts (sig ≤ 30):  2 Bijoy-range chars suffice — paste snippets and
+    #                             short captions that carry only a few conjuncts.
+    #   Medium texts (≤ 100):    3 chars — paragraph-length content.
+    #   Long texts  (> 100):     5 chars — the original conservative floor.
+    # The 13× ratio (≈ 7.7 % density) is more lenient than the old 10× threshold,
+    # catching Bijoy+Latin mixed documents that the prior check rejected.
+    sig = bj + la
+    min_bj = 5 if sig > 100 else (3 if sig > 30 else 2)
+    if bj >= min_bj and (la == 0 or bj * 13 >= la):
+        return "bijoy"
     return "latin"
 
 

@@ -50,6 +50,28 @@ class TestDetectScript:
     def test_digits_only_returns_other(self):
         assert detect_script("12345") == "other"
 
+    def test_short_bijoy_two_chars_no_latin(self):
+        # bj=2, la=0, sig=2 ≤ 30 → adaptive min_bj=2 → bijoy (old threshold 5 rejected this)
+        assert detect_script("°©") == "bijoy"
+
+    def test_short_bijoy_two_chars_with_latin(self):
+        # bj=2, la=3, sig=5 ≤ 30 → min_bj=2 → ratio 2×13=26 ≥ 3 → bijoy
+        assert detect_script("†K©ga") == "bijoy"
+
+    def test_medium_text_three_bijoy_chars(self):
+        # bj=3, la=37, sig=40 (30 < 40 ≤ 100) → min_bj=3 → ratio 3×13=39 ≥ 37 → bijoy
+        # Old threshold (bj ≥ 5) incorrectly returned 'latin' for this case.
+        assert detect_script("°©†" + "a" * 37) == "bijoy"
+
+    def test_relaxed_ratio_catches_low_density(self):
+        # bj=8, la=100, sig=108 > 100 → min_bj=5 → ratio 8×13=104 ≥ 100 → bijoy
+        # Old ratio (10×): 8×10=80 < 100 → 'latin' (false negative). New 13× fixes it.
+        assert detect_script("°" * 8 + "a" * 100) == "bijoy"
+
+    def test_two_distinct_bijoy_chars_no_latin(self):
+        # © (U+00A9) and ¨ (U+00A8) are both Bijoy-range; no Latin → bijoy
+        assert detect_script("©¨") == "bijoy"
+
 
 # ── is_bijoy ──────────────────────────────────────────────────────────────────
 
