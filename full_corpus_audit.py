@@ -546,6 +546,8 @@ def main():
                     help="Expand ZIPs / split PDFs/XLSX above this size in MB (default 20)")
     ap.add_argument("--pdf-chunk-pages", type=int, default=20,
                     help="Pages per PDF chunk when splitting (default 20)")
+    ap.add_argument("--exclude", action="append", default=[], metavar="PATTERN",
+                    help="Skip source files whose name contains PATTERN (case-insensitive, repeatable)")
     args = ap.parse_args()
 
     auto_ocr = not args.no_ocr
@@ -561,6 +563,7 @@ def main():
     gpu_info    = _detect_gpu()
 
     # ── Collect all files ────────────────────────────────────────────────────
+    exclude_patterns = [p.lower() for p in args.exclude]
     raw_files = []
     for f in TEST_ROOT.rglob("*"):
         if not f.is_file():
@@ -568,6 +571,8 @@ def main():
         if any(f.name.startswith(pf) for pf in SKIP_NAME_PREFIXES):
             continue
         if f.suffix.lower() in SKIP_EXTS or f.name.lower() == ".ds_store":
+            continue
+        if exclude_patterns and any(pat in f.name.lower() for pat in exclude_patterns):
             continue
         raw_files.append(str(f))
 
@@ -586,6 +591,8 @@ def main():
         print(f"  Expand threshold: {args.expand_threshold} MB  "
               f"(PDF chunks: {args.pdf_chunk_pages} pages, XLSX by sheet)")
         print(f"  OCR: {'on' if auto_ocr else 'off'}")
+        if exclude_patterns:
+            print(f"  Excluded: {', '.join(args.exclude)}")
         if split_log:
             print(f"  Expanded {len(split_log)} large file(s):")
             for line in split_log:
