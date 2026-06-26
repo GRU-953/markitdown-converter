@@ -4,6 +4,16 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.3] — 2026-06-26
+
+### Fixed — onboarding text accuracy
+- Onboarding step 1 said 'click "Add files"' — there is no "Add files" button; the correct action is clicking inside the drop area. Updated in `en.json` and `bn.json`.
+
+### Improved — version number caching in JS
+- `populateAbout()` now caches `_appVersion` on first call. Previously it called `api().get_version()` on every language switch, which is unnecessary since the version never changes during a session.
+
+---
+
 ## [v4.10.2] — 2026-06-26
 
 ### Fixed — export dialog directory fallback

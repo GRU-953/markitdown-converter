@@ -11,6 +11,7 @@ let outMode = "preview"; // preview | edit
 let LOCALES = {};        // { en: {...}, bn: {...} }
 let lang = "en";         // active UI language
 let _updateInfo = null;  // cached update info for banner re-render on lang switch
+let _appVersion = null;  // cached once; never changes during a session
 const $ = (id) => document.getElementById(id);
 const api = () => window.pywebview.api;
 
@@ -79,9 +80,9 @@ async function start() {
 
 async function populateAbout() {
   try {
-    const ver = await api().get_version();
+    if (!_appVersion) _appVersion = await api().get_version();
     const el = $("about-ver");
-    if (el) el.textContent = t("settings.about.version", { version: ver });
+    if (el) el.textContent = t("settings.about.version", { version: _appVersion });
   } catch (e) {}
 }
 
