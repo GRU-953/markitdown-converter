@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 import pipeline
 from pipeline import (
     convert_file, is_image, is_legacy_doc, is_unsupported, is_rtf, is_xlsx, is_plain_text,
-    _read_plain_text, _extract_xlsx_direct,
+    _read_plain_text, _extract_xlsx_direct, _extract_legacy_doc,
 )
 
 
@@ -256,6 +256,15 @@ class TestLegacyDoc:
 
         assert "doc_empty" in out["steps"]
         assert out["text"] == ""
+
+    def test_doc_ole_step_on_success(self, tmp_path, monkeypatch):
+        """When OLE extraction succeeds, 'doc_ole' appears and MarkItDown is not called."""
+        f = _touch(tmp_path, "old.doc")
+        monkeypatch.setattr(pipeline, "_extract_legacy_doc", lambda path: "Extracted content")
+        out = convert_file(str(f), auto_bijoy=False)
+        assert "doc_ole" in out["steps"]
+        assert "doc_empty" not in out["steps"]
+        assert out["text"] == "Extracted content"
 
 
 # ── T-2: is_unsupported + ValueError ─────────────────────────────────────────
@@ -586,3 +595,55 @@ class TestExtractXlsxDirect:
         f.write_bytes(b"dummy")
         result = _extract_xlsx_direct(str(f))
         assert result == ""
+
+
+# ── _extract_legacy_doc unit tests ───────────────────────────────────────────
+
+class TestExtractLegacyDoc:
+    def test_no_olefile_returns_empty(self, monkeypatch):
+        """When olefile is not installed, returns empty string."""
+        monkeypatch.setitem(sys.modules, "olefile", None)
+        assert _extract_legacy_doc("any.doc") == ""
+
+    def test_ole_open_error_returns_empty(self, monkeypatch):
+        """When OleFileIO raises on open (file is not an OLE container), returns empty string."""
+        class FailOleFileIO:
+            def __init__(self, path):
+                raise ValueError("not an OLE file")
+            def __enter__(self): return self
+            def __exit__(self, *a): pass
+
+        fake_mod = type("olefile", (), {"OleFileIO": FailOleFileIO})
+        monkeypatch.setitem(sys.modules, "olefile", fake_mod)
+        assert _extract_legacy_doc("x.doc") == ""
+
+    def test_no_word_document_stream_returns_empty(self, monkeypatch):
+        """When the WordDocument stream is absent inside the OLE container, returns empty string."""
+        class FakeOleFileIO:
+            def __init__(self, path): pass
+            def __enter__(self): return self
+            def __exit__(self, *a): pass
+            def exists(self, name): return False
+
+        fake_mod = type("olefile", (), {"OleFileIO": FakeOleFileIO})
+        monkeypatch.setitem(sys.modules, "olefile", fake_mod)
+        assert _extract_legacy_doc("x.doc") == ""
+
+    def test_cc_text_zero_returns_empty(self, monkeypatch):
+        """When the FIB header reports cc_text == 0, returns empty string immediately."""
+        # A 512-byte all-zero buffer: csw=0 → fib_rglw_start=36, cc_text at offset 48 = 0.
+        binary = bytes(512)
+
+        class FakeStream:
+            def read(self): return binary
+
+        class FakeOleFileIO:
+            def __init__(self, path): pass
+            def __enter__(self): return self
+            def __exit__(self, *a): pass
+            def exists(self, name): return name == "WordDocument"
+            def openstream(self, name): return FakeStream()
+
+        fake_mod = type("olefile", (), {"OleFileIO": FakeOleFileIO})
+        monkeypatch.setitem(sys.modules, "olefile", fake_mod)
+        assert _extract_legacy_doc("x.doc") == ""

@@ -4,6 +4,20 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.25] — 2026-06-26
+
+### Fixed — update download fallback used in-app window.open
+- When the update installer download failed, the fallback path called `window.open(pageUrl)` to open the GitHub release page. In WebView2 (the browser engine used on Windows), `window.open()` opens a new in-app webview frame rather than the system browser, so users would see a blank embedded window. The fallback now calls `api().install_update(pageUrl)`, which hands the URL to Python's `webbrowser.open()` and opens the user's default browser correctly.
+
+### Tests — 5 new `_extract_legacy_doc` and `doc_ole` tests (153 total, up from 148)
+- `TestExtractLegacyDoc.test_no_olefile_returns_empty`: `olefile` not installed → returns `""`
+- `TestExtractLegacyDoc.test_ole_open_error_returns_empty`: `OleFileIO` raises on open → returns `""`
+- `TestExtractLegacyDoc.test_no_word_document_stream_returns_empty`: missing `WordDocument` OLE stream → returns `""`
+- `TestExtractLegacyDoc.test_cc_text_zero_returns_empty`: FIB header with `cc_text == 0` → returns `""`
+- `TestLegacyDoc.test_doc_ole_step_on_success`: when OLE extraction succeeds, `doc_ole` step appears and MarkItDown is not called
+
+---
+
 ## [v4.10.24] — 2026-06-26
 
 ### Tests — 4 new Bijoy POST_MAP regression tests (148 total, up from 144)

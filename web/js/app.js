@@ -145,10 +145,10 @@ async function doUpdate(downloadUrl, pageUrl) {
   try {
     const res = await api().install_update(downloadUrl || pageUrl);
     msg.textContent = (res && res.ok) ? t("update.starting") : t("update.failed");
-    if (res && !res.ok && pageUrl) setTimeout(() => window.open(pageUrl), 800);
+    if (res && !res.ok && pageUrl) setTimeout(() => api().install_update(pageUrl), 800);
   } catch (e) {
     msg.textContent = t("update.failed");
-    if (pageUrl) setTimeout(() => window.open(pageUrl), 800);
+    if (pageUrl) setTimeout(() => api().install_update(pageUrl), 800);
   }
 }
 
