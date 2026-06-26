@@ -719,6 +719,28 @@ class TestExtractLegacyDoc:
         monkeypatch.setitem(sys.modules, "olefile", fake_mod)
         assert _extract_legacy_doc("x.doc") == ""
 
+    def test_cc_text_exceeds_data_length_returns_empty(self, monkeypatch):
+        """When cc_text reported in the FIB exceeds the stream length, returns empty string."""
+        import struct as _struct
+        binary = bytearray(512)
+        # csw=0 → fib_rglw_start=36; cc_text is at offset 48.  Set it to 0xFFFFFFFF > 512.
+        _struct.pack_into("<I", binary, 48, 0xFFFFFFFF)
+        binary = bytes(binary)
+
+        class FakeStream:
+            def read(self): return binary
+
+        class FakeOleFileIO:
+            def __init__(self, path): pass
+            def __enter__(self): return self
+            def __exit__(self, *a): pass
+            def exists(self, name): return name == "WordDocument"
+            def openstream(self, name): return FakeStream()
+
+        fake_mod = type("olefile", (), {"OleFileIO": FakeOleFileIO})
+        monkeypatch.setitem(sys.modules, "olefile", fake_mod)
+        assert _extract_legacy_doc("x.doc") == ""
+
 
 # ── DOCX font-name Bijoy detection ───────────────────────────────────────────
 

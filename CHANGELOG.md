@@ -4,6 +4,16 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.38] — 2026-06-27
+
+### Tests — OLE cc_text overflow guard (211 total, up from 210)
+
+Added `test_cc_text_exceeds_data_length_returns_empty` to `TestExtractLegacyDoc` in `test_pipeline.py`.
+
+The guard at `pipeline.py:100` (`cc_text > len(data)`) is now explicitly covered: a mocked OLE stream with `cc_text = 0xFFFFFFFF` (≫ 512-byte stream) exercises the early-return path that protects against struct.unpack reading beyond the buffer.
+
+---
+
 ## [v4.10.37] — 2026-06-27
 
 ### Tests — Bijoy detection edge cases (210 total, up from 208)
