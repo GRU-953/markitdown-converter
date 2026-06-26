@@ -212,6 +212,24 @@ class TestBijoyStep:
         )
         assert not detection_called  # short-circuit: needs_bijoy already True
 
+    def test_rtf_empty_raw_skips_font_detection(self, tmp_path, monkeypatch):
+        """When read_bytes raises, _rtf_raw=''; the 'if _rtf_raw:' guard prevents _rtf_font_has_bijoy call."""
+        f = tmp_path / "locked.rtf"
+        f.write_bytes(b"dummy")
+        monkeypatch.setattr(pipeline.Path, "read_bytes",
+                            lambda self: (_ for _ in ()).throw(OSError("locked")))
+        detection_called = []
+        monkeypatch.setattr(pipeline, "_rtf_font_has_bijoy",
+                            lambda raw: detection_called.append(raw) or False)
+        out = convert_file(
+            str(f),
+            markitdown=FakeMarkItDown("some text"),
+            auto_bijoy=True,
+            is_bijoy_func=lambda t: False,
+            bijoy_func=lambda t: t,
+        )
+        assert not detection_called  # _rtf_raw == '' → 'if _rtf_raw:' is False → skipped
+
 
 # ── errors / lazy markitdown ──────────────────────────────────────────────────
 
@@ -1074,6 +1092,36 @@ class TestExtractLegacyDoc:
         fake_mod = type("olefile", (), {"OleFileIO": FakeOleFileIO})
         monkeypatch.setitem(sys.modules, "olefile", fake_mod)
         assert _extract_legacy_doc("x.doc") == "E" * 20
+
+    def test_cp0_valid_but_cc_text_overrun_falls_back_to_scan(self, monkeypatch):
+        """cp0 in range (0 < cp0 < len(data)) but cp0+cc_text > len(data) →
+        the 'cp0+cc_text <= len(data)' guard at line 117 fails → text_start=None → scan used."""
+        import struct as _struct
+        # 512-byte stream; cc_text=20; cp0=505: 505<512 (in range) but 505+20=525>512 (overrun)
+        binary = bytearray(512)
+        _struct.pack_into("<I", binary, 48, 20)    # cc_text = 20
+        _struct.pack_into("<I", binary, 134, 4)    # fc_chpx = 4 → cp0 from tdata[4:8]
+        binary = bytes(binary)
+        tdata = bytearray(8)
+        _struct.pack_into("<I", tdata, 4, 505)     # cp0 = 505 → 505+20=525>512 → guard fails
+        tdata = bytes(tdata)
+
+        class FakeStream:
+            def __init__(self, data): self._data = data
+            def read(self): return self._data
+
+        class FakeOleFileIO:
+            def __init__(self, path): pass
+            def __enter__(self): return self
+            def __exit__(self, *a): pass
+            def exists(self, name): return name in ("WordDocument", "0Table")
+            def openstream(self, name):
+                return FakeStream(binary if name == "WordDocument" else tdata)
+
+        fake_mod = type("olefile", (), {"OleFileIO": FakeOleFileIO})
+        monkeypatch.setitem(sys.modules, "olefile", fake_mod)
+        # Zero-filled binary → scan finds no printable content → "" returned
+        assert _extract_legacy_doc("x.doc") == ""
 
     def test_no_table_stream_fallback_scan_extracts_text(self, monkeypatch):
         """When no table stream exists, the fallback ASCII density scan locates printable text."""

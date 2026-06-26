@@ -92,6 +92,36 @@ class TestDetectScript:
         # bn=0, bj=0, la=0 → total == 0 → return "other" (line 444–445).
         assert detect_script("АБВГД") == "other"
 
+    def test_sig_exactly_30_bj_fails_ratio(self):
+        """sig == 30 (≤ 30): min_bj=2, ratio_k=10; bj=2, la=28 → bj*10=20 < 28 → 'latin'."""
+        # sig = 2 + 28 = 30 ≤ 30 → short thresholds: min_bj=2, ratio_k=10
+        # bj=2 ≥ min_bj=2 but 2×10=20 < 28=la → ratio guard fails → latin
+        assert detect_script("©©" + "a" * 28) == "latin"
+
+    def test_sig_exactly_30_bj_passes_ratio(self):
+        """sig == 30 (≤ 30): min_bj=2, ratio_k=10; bj=3, la=27 → bj*10=30 ≥ 27 → 'bijoy'."""
+        # sig = 3 + 27 = 30 ≤ 30 → short thresholds: min_bj=2, ratio_k=10
+        # bj=3 ≥ 2 and 3×10=30 ≥ 27 → bijoy
+        assert detect_script("©" * 3 + "a" * 27) == "bijoy"
+
+    def test_sig_31_uses_medium_min_bj(self):
+        """sig == 31 (30 < sig ≤ 100): min_bj=3, ratio_k=13; bj=2 < min_bj → 'latin'."""
+        # sig = 2 + 29 = 31 > 30 → medium thresholds: min_bj=3, ratio_k=13
+        # bj=2 < min_bj=3 → bijoy condition False → latin
+        assert detect_script("©©" + "a" * 29) == "latin"
+
+    def test_sig_100_uses_medium_thresholds(self):
+        """sig == 100 (≤ 100): min_bj=3, ratio_k=13; bj=3 ≥ min_bj but ratio fails → 'latin'."""
+        # sig = 3 + 97 = 100 ≤ 100 and > 30 → medium thresholds: min_bj=3, ratio_k=13
+        # bj=3 ≥ 3 but 3×13=39 < 97 → ratio guard fails → latin
+        assert detect_script("©©©" + "a" * 97) == "latin"
+
+    def test_sig_101_uses_long_min_bj(self):
+        """sig == 101 (> 100): min_bj=5, ratio_k=13; bj=4 < min_bj → 'latin'."""
+        # sig = 4 + 97 = 101 > 100 → long thresholds: min_bj=5, ratio_k=13
+        # bj=4 < min_bj=5 → bijoy condition False → latin
+        assert detect_script("©" * 4 + "a" * 97) == "latin"
+
 
 # ── is_bijoy ──────────────────────────────────────────────────────────────────
 
@@ -289,6 +319,16 @@ class TestConvertBijoyToUnicode:
         assert guarded != reordered
         assert "া" in guarded               # aa-kar remains but not moved to front
 
+    def test_reph_preceded_only_by_kars_not_repositioned(self):
+        """_rearrange Pass 1: all chars before র্ are kars → check walks to -1 → no reph reposition."""
+        # "ার্ক" = aa-kar + র + ্ + ক.  At i=1 (র): check starts at 0 (া = kar),
+        # _is_kar fires → check -=1 → check = -1 → 'check >= 0' is False → repositioning skipped.
+        text = "া" + "র" + "্" + "ক"
+        result = _rearrange(text)
+        # The sequence is NOT restructured as a reph — র remains inside, not at front as র্
+        assert not result.startswith("র্")
+        assert "র" in result
+
 
 # ── POST_MAP cleanup ─────────────────────────────────────────────────────────
 
@@ -330,6 +370,17 @@ class TestChBoundary:
 
     def test_valid_index_returns_char(self):
         assert _ch("abc", 0) == "a"
+
+
+# ── _apply_literal edge cases ─────────────────────────────────────────────────
+
+class TestApplyLiteralEdge:
+    def test_empty_old_string_skipped(self):
+        """_apply_literal: when old == '' in the charmap, the 'if old:' guard skips it."""
+        # An empty old-string would cause str.split('') to raise ValueError,
+        # but the guard 'if old:' prevents that; only the valid ('e', 'a') entry fires.
+        result = _apply_literal("hello", [("", "SKIP"), ("e", "a")])
+        assert result == "hallo"
 
 
 # ── PRE_MAP and _PRE_REGEX whitespace handling ────────────────────────────────

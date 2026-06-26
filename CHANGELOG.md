@@ -4,6 +4,33 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.65] — 2026-06-27
+
+### Tests — boundary coverage: detect_script thresholds, reph/OLE edge cases, RTF guard (321 total, up from 312)
+
+Nine new tests closing branch gaps identified by systematic audit:
+
+**`TestDetectScript` — 5 new tests:**
+- `test_sig_exactly_30_bj_fails_ratio`: sig=30 (short threshold), bj=2, la=28 → ratio 2×10=20 < 28 → `"latin"`
+- `test_sig_exactly_30_bj_passes_ratio`: sig=30, bj=3, la=27 → 3×10=30 ≥ 27 → `"bijoy"`
+- `test_sig_31_uses_medium_min_bj`: sig=31 crosses into medium tier (min_bj=3); bj=2 < 3 → `"latin"`
+- `test_sig_100_uses_medium_thresholds`: sig=100 (still medium, ≤100); bj=3, ratio 3×13=39 < 97 → `"latin"`
+- `test_sig_101_uses_long_min_bj`: sig=101 crosses into long tier (min_bj=5); bj=4 < 5 → `"latin"`
+
+**`TestConvertBijoyToUnicode` — 1 new test:**
+- `test_reph_preceded_only_by_kars_not_repositioned`: `"ার্ক"` — all chars before র্ are kars, `check` walks to −1 → guard `check >= 0` is False → reph not repositioned
+
+**`TestExtractLegacyDoc` — 1 new test:**
+- `test_cp0_valid_but_cc_text_overrun_falls_back_to_scan`: cp0 in-bounds (0 < cp0 < len(data)) but cp0+cc_text overruns; `cp0+cc_text <= len(data)` guard fails → text_start stays None → fallback scan used → empty result from zero-filled binary
+
+**`TestApplyLiteralEdge` — 1 new test (new class):**
+- `test_empty_old_string_skipped`: charmap entry with `old == ""` is skipped by the `if old:` guard in `_apply_literal`; only valid entries fire
+
+**`TestBijoyStep` — 1 new test:**
+- `test_rtf_empty_raw_skips_font_detection`: when `p.read_bytes()` raises, `_rtf_raw = ""`; the `if _rtf_raw:` guard in `convert_file` prevents `_rtf_font_has_bijoy` from being called (verified with a sentinel mock)
+
+---
+
 ## [v4.10.64] — 2026-06-27
 
 ### Fix + Feature — XLSX Bijoy font detection (312 tests, up from 305)
