@@ -699,3 +699,24 @@ class TestDocxFontDetection:
         )
         assert "bijoy" in out["steps"]
         assert out["text"] == "বাংলা"
+
+    def test_bijoy_font_in_styles_xml_detected(self, tmp_path):
+        """Font declared only in word/styles.xml (paragraph style) is also detected."""
+        import zipfile
+        docx_path = tmp_path / "styled.docx"
+        doc_xml = (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+            '<w:body><w:p><w:r><w:t>evsjv</w:t></w:r></w:p></w:body></w:document>'
+        )
+        styles_xml = (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+            '<w:style w:type="paragraph" w:styleId="BijoyNormal">'
+            '<w:rPr><w:rFonts w:ascii="SutonnyMJ" w:hAnsi="SutonnyMJ"/></w:rPr>'
+            '</w:style></w:styles>'
+        )
+        with zipfile.ZipFile(str(docx_path), "w") as z:
+            z.writestr("word/document.xml", doc_xml)
+            z.writestr("word/styles.xml", styles_xml)
+        assert _docx_font_has_bijoy(str(docx_path)) is True

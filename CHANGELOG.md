@@ -4,6 +4,17 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.27] — 2026-06-26
+
+### Fixed — DOCX font detection now also scans word/styles.xml
+
+`_docx_font_has_bijoy()` previously only checked `word/document.xml`. Old Bijoy documents commonly define SutonnyMJ as a paragraph style in `word/styles.xml` and individual runs carry no explicit `w:rFonts`. The function now reads both XML parts in a single ZIP open, so style-level Bijoy font declarations are caught.
+
+### Tests — 1 new DOCX styles.xml test (164 total, up from 163)
+- `TestDocxFontDetection.test_bijoy_font_in_styles_xml_detected`: DOCX with SutonnyMJ only in word/styles.xml (no rFonts in document.xml) → True
+
+---
+
 ## [v4.10.26] — 2026-06-26
 
 ### Improved — Bijoy detection: adaptive thresholds + DOCX font-name sniffing

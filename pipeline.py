@@ -178,31 +178,35 @@ _WS_RE = re.compile(r"\s+")
 
 
 def _docx_font_has_bijoy(path: str) -> bool:
-    """Return True if any run in the DOCX uses a known Bijoy font.
+    """Return True if any run or style in the DOCX uses a known Bijoy font.
 
-    Peeks inside the DOCX ZIP, parses word/document.xml, and checks every
-    w:rFonts attribute value against the curated _BIJOY_FONTS list.
+    Scans both word/document.xml (per-run fonts) and word/styles.xml (style
+    definitions) because old Bijoy documents commonly set SutonnyMJ on a
+    paragraph style, leaving word/document.xml runs with no explicit w:rFonts.
     Normalisation mirrors Mukti's FontRegistry.Normalize: strip, lowercase,
     collapse whitespace, drop everything from the first comma onward.
     Returns False on any error (unreadable, not a ZIP, malformed XML).
     """
     import zipfile
     import xml.etree.ElementTree as ET
+    _DOCX_XML_PARTS = ("word/document.xml", "word/styles.xml")
     try:
         with zipfile.ZipFile(path, "r") as z:
-            if "word/document.xml" not in z.namelist():
-                return False
-            xml_bytes = z.read("word/document.xml")
-        root = ET.fromstring(xml_bytes)
+            names = z.namelist()
+            parts = [z.read(p) for p in _DOCX_XML_PARTS if p in names]
+        if not parts:
+            return False
         ns = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
-        for elem in root.iter(f"{{{ns}}}rFonts"):
-            for val in elem.attrib.values():
-                norm = _WS_RE.sub(" ", val.strip().lower())
-                comma = norm.find(",")
-                if comma >= 0:
-                    norm = norm[:comma].strip()
-                if norm in _BIJOY_FONTS:
-                    return True
+        for xml_bytes in parts:
+            root = ET.fromstring(xml_bytes)
+            for elem in root.iter(f"{{{ns}}}rFonts"):
+                for val in elem.attrib.values():
+                    norm = _WS_RE.sub(" ", val.strip().lower())
+                    comma = norm.find(",")
+                    if comma >= 0:
+                        norm = norm[:comma].strip()
+                    if norm in _BIJOY_FONTS:
+                        return True
     except Exception:
         pass
     return False
