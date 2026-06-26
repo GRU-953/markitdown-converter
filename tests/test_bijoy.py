@@ -14,7 +14,7 @@ def nfc(s):
     """Normalise to NFC so ya+nukta (U+09AF U+09BC) == yya (U+09DF)."""
     return unicodedata.normalize("NFC", s)
 
-from bijoy_unicode import convert_bijoy_to_unicode, detect_script, is_bijoy, _rearrange, _ch
+from bijoy_unicode import convert_bijoy_to_unicode, detect_script, is_bijoy, _rearrange, _ch, _apply_literal, POST_MAP
 
 
 # ── detect_script ─────────────────────────────────────────────────────────────
@@ -316,3 +316,37 @@ class TestPreMapAndPreRegex:
         with_space    = convert_bijoy_to_unicode("† M")  # not reordered: ে followed by space
         assert without_space != with_space
         assert "ে" in with_space  # pre-kar remains at position before the space
+
+
+# ── POST_MAP entries (direct _apply_literal tests) ────────────────────────────
+
+class TestPostMapEntries:
+    """Direct coverage of POST_MAP entries not exercised by convert_bijoy_to_unicode tests."""
+
+    def test_space_visarga_becomes_colon(self):
+        """' ঃ' (space + visarga) → ':'."""
+        assert _apply_literal(" ঃ", POST_MAP) == ":"
+
+    def test_newline_visarga_becomes_newline_colon(self):
+        """'\\nঃ' (newline + visarga) → '\\n:'."""
+        assert _apply_literal("\nঃ", POST_MAP) == "\n:"
+
+    def test_bracket_close_visarga_becomes_colon(self):
+        """']ঃ' → ']:'."""
+        assert _apply_literal("]ঃ", POST_MAP) == "]:"
+
+    def test_bracket_open_visarga_becomes_colon(self):
+        """'[ঃ' → '[:'."""
+        assert _apply_literal("[ঃ", POST_MAP) == "[:"
+
+    def test_double_space_collapsed_to_single(self):
+        """Double space in Unicode output collapsed to single space by POST_MAP."""
+        assert _apply_literal("word  word", POST_MAP) == "word word"
+
+    def test_stha_conjunct_normalised(self):
+        """'স্ত্ম' → 'স্ত' — spurious ম stripped from the স্ত conjunct."""
+        assert _apply_literal("স্ত্ম", POST_MAP) == "স্ত"
+
+    def test_nta_conjunct_normalised(self):
+        """'ন্ত্ম' → 'ন্ত' — spurious ম stripped from the ন্ত conjunct."""
+        assert _apply_literal("ন্ত্ম", POST_MAP) == "ন্ত"

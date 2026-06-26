@@ -4,6 +4,19 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.55] — 2026-06-27
+
+### Tests — POST_MAP untested entries via _apply_literal (268 total, up from 261)
+
+New class `TestPostMapEntries` in `test_bijoy.py` directly tests the seven POST_MAP substitutions that no existing test exercised:
+- `" ঃ"` → `":"` (space-visarga → colon)
+- `"\nঃ"` → `"\n:"` (newline-visarga → newline-colon)
+- `"]ঃ"` → `"]:"` and `"[ঃ"` → `"[:"` (bracket-visarga → bracket-colon)
+- `"  "` → `" "` (double space in Unicode output collapsed)
+- `"স্ত্ম"` → `"স্ত"` and `"ন্ত্ম"` → `"ন্ত"` (spurious ম stripped from s/nta conjuncts)
+
+---
+
 ## [v4.10.54] — 2026-06-27
 
 ### Tests — _setup_tesseract tessdata-absent branches (261 total, up from 259)
