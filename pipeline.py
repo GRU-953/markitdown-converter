@@ -342,13 +342,13 @@ def convert_file(
                 text = ""
         steps.append("rtf")
     elif is_xlsx(p):
-        # XLSX ≥ 5 MB: MarkItDown's table formatter builds the full sheet in
-        # memory and can hang indefinitely on large files (no exception raised).
+        # XLSX ≥ 2 MB: MarkItDown's table formatter builds the full sheet in
+        # memory and can hang indefinitely on survey-style files (no exception raised).
         # Use openpyxl read_only streaming directly — lazy row iteration, no ONNX.
-        # XLSX < 5 MB: try MarkItDown first (richer markdown table output);
+        # XLSX < 2 MB: try MarkItDown first (richer markdown table output);
         # fall back to openpyxl on any exception (MemoryError, ONNX error, etc.).
         _xlsx_mb = p.stat().st_size / (1024 * 1024)
-        if _xlsx_mb >= 5.0:
+        if _xlsx_mb >= 2.0:
             text = _extract_xlsx_direct(str(p))
             steps.append("xlsx_direct")
         else:

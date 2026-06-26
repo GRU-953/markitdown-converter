@@ -7,7 +7,7 @@ automatically on better machines:
   Workers      auto-detect: floor(logical_cpus * 0.70) capped by free RAM / 700 MB
   Sort order   smallest files first; large files last
   Large ZIPs   extracted to temp dir; each member tested individually (no OOM)
-  Large PDFs   split into 50-page chunks; each chunk tested separately
+  Large PDFs   split into 20-page chunks; each chunk tested separately
   Large XLSX   split into per-sheet temp files; each sheet tested separately
   RAM throttle dispatching pauses if system RAM exceeds --ram-cap (default 88%)
   Worker       single ONNX session per lifetime (not reloaded per file)
@@ -544,7 +544,7 @@ def main():
                     help="Pause dispatch if system RAM %% >= this value (default 88)")
     ap.add_argument("--expand-threshold", type=float, default=20.0,
                     help="Expand ZIPs / split PDFs/XLSX above this size in MB (default 20)")
-    ap.add_argument("--pdf-chunk-pages", type=int, default=50,
+    ap.add_argument("--pdf-chunk-pages", type=int, default=20,
                     help="Pages per PDF chunk when splitting (default 50)")
     args = ap.parse_args()
 

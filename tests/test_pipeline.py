@@ -374,13 +374,13 @@ class TestXlsx:
         assert out["text"] == "row1 | col1\nrow2 | col2"
 
     def test_xlsx_large_bypasses_markitdown(self, tmp_path, monkeypatch):
-        """XLSX >= 5 MB must use xlsx_direct without calling MarkItDown at all."""
+        """XLSX >= 2 MB must use xlsx_direct without calling MarkItDown at all."""
         f = tmp_path / "big.xlsx"
-        f.write_bytes(b"\x00" * (5 * 1024 * 1024 + 1))   # 5 MB + 1 byte
+        f.write_bytes(b"\x00" * (2 * 1024 * 1024 + 1))   # 2 MB + 1 byte
 
         class ExplodingMarkItDown:
             def convert(self, path):
-                raise AssertionError("MarkItDown must NOT be called for XLSX >= 5 MB")
+                raise AssertionError("MarkItDown must NOT be called for XLSX >= 2 MB")
 
         monkeypatch.setattr(pipeline, "_extract_xlsx_direct", lambda path: "a | b\nc | d")
         out = convert_file(str(f), markitdown=ExplodingMarkItDown())
