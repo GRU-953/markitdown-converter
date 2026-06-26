@@ -121,6 +121,8 @@ On Windows, you can also turn on **Windows colours** in Settings to use your sys
 
 The **History tab** keeps a record of every file you have converted. You can see which files succeeded, which had warnings, and clear the list whenever you like.
 
+Hover over any history entry and click the **+** button to add that file straight back to the Convert queue — no need to find and open it again.
+
 ---
 
 ## ❓ Frequently asked questions
@@ -182,7 +184,7 @@ build_exe.bat
 ```bash
 pip install pytest pytest-cov
 pytest tests/ -v
-# 145 tests across pipeline, bijoy_unicode, ocr_engine, settings, utils
+# 144 tests across pipeline, bijoy_unicode, ocr_engine, settings
 ```
 
 Built with [pywebview](https://pywebview.flowrl.com/) · [MarkItDown](https://github.com/microsoft/markitdown) · [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) · DM Sans · Noto Sans Bengali  
