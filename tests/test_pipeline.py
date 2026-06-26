@@ -924,6 +924,34 @@ class TestDocxFontDetection:
             z.writestr("word/styles.xml", styles_xml)
         assert _docx_font_has_bijoy(str(docx_path)) is True
 
+    def test_dotx_also_triggers_font_detection(self, tmp_path, monkeypatch):
+        """.dotx (Word template) is in the DOCX extension list → font detection applies."""
+        f = _touch(tmp_path, "template.dotx")
+        monkeypatch.setattr(pipeline, "_docx_font_has_bijoy", lambda p: True)
+        out = convert_file(
+            str(f),
+            markitdown=FakeMarkItDown("evsjv"),
+            auto_bijoy=True,
+            is_bijoy_func=lambda t: False,
+            bijoy_func=lambda t: "বাংলা",
+        )
+        assert "bijoy" in out["steps"]
+        assert out["text"] == "বাংলা"
+
+    def test_dotm_also_triggers_font_detection(self, tmp_path, monkeypatch):
+        """.dotm (macro-enabled Word template) is in the DOCX extension list → font detection applies."""
+        f = _touch(tmp_path, "template.dotm")
+        monkeypatch.setattr(pipeline, "_docx_font_has_bijoy", lambda p: True)
+        out = convert_file(
+            str(f),
+            markitdown=FakeMarkItDown("evsjv"),
+            auto_bijoy=True,
+            is_bijoy_func=lambda t: False,
+            bijoy_func=lambda t: "বাংলা",
+        )
+        assert "bijoy" in out["steps"]
+        assert out["text"] == "বাংলা"
+
     def test_empty_zip_no_parts_returns_false(self, tmp_path):
         """DOCX ZIP that contains no word/*.xml → parts is empty → False."""
         import zipfile
@@ -1042,6 +1070,20 @@ class TestPptxFontDetection:
     def test_pptx_font_detection_triggers_bijoy_conversion(self, tmp_path, monkeypatch):
         """ASCII-only Bijoy PPTX + SutonnyMJ font → bijoy step via font detection."""
         f = _touch(tmp_path, "slides.pptx")
+        monkeypatch.setattr(pipeline, "_pptx_font_has_bijoy", lambda p: True)
+        out = convert_file(
+            str(f),
+            markitdown=FakeMarkItDown("evsjv"),
+            auto_bijoy=True,
+            is_bijoy_func=lambda t: False,
+            bijoy_func=lambda t: "বাংলা",
+        )
+        assert "bijoy" in out["steps"]
+        assert out["text"] == "বাংলা"
+
+    def test_ppsx_also_triggers_font_detection(self, tmp_path, monkeypatch):
+        """.ppsx (PowerPoint Show) is in _PPTX_EXTS → font detection applies."""
+        f = _touch(tmp_path, "show.ppsx")
         monkeypatch.setattr(pipeline, "_pptx_font_has_bijoy", lambda p: True)
         out = convert_file(
             str(f),

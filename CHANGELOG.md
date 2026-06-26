@@ -4,6 +4,21 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.48] — 2026-06-27
+
+### Tests — Word template and PPTX Show extension coverage (244 total, up from 241)
+
+Three new integration tests verify that all Office format extensions wired into the auto-Bijoy font-detection block are correctly triggered:
+
+**`TestDocxFontDetection`:**
+- `test_dotx_also_triggers_font_detection`: `.dotx` (Word template) is in the DOCX extension set → `_docx_font_has_bijoy` is called and Bijoy conversion fires
+- `test_dotm_also_triggers_font_detection`: `.dotm` (macro-enabled Word template) — same path
+
+**`TestPptxFontDetection`:**
+- `test_ppsx_also_triggers_font_detection`: `.ppsx` (PowerPoint Show) is in `_PPTX_EXTS` → `_pptx_font_has_bijoy` called → Bijoy conversion fires
+
+---
+
 ## [v4.10.47] — 2026-06-27
 
 ### Tests — PRE_MAP, `_PRE_REGEX`, and `_is_space` guard in bijoy_unicode (241 total, up from 237)
