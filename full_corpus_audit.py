@@ -56,10 +56,14 @@ try:
             break
 except ImportError:
     pass
-# ── Pipeline import (triggers lazy dep loading — fast) ─────────────────────
+# ── Pipeline import + ONNX pre-warm (magika model loaded before WORKER_READY) ─
 proj = sys.argv[1]
 sys.path.insert(0, proj)
-from pipeline import convert_file
+from pipeline import convert_file, _get_markitdown
+try:
+    _get_markitdown()   # loads MarkItDown + magika ONNX (~8-15 s, done once here)
+except Exception:
+    pass
 sys.stderr.write("WORKER_READY\\n")
 sys.stderr.flush()
 # ── Main loop ───────────────────────────────────────────────────────────────
@@ -165,7 +169,8 @@ def _extract_zip_members(zip_path: str, tmp_dir: pathlib.Path) -> list:
                 if ext in SKIP_EXTS or name.lower() == ".ds_store":
                     continue
                 out = zf.extract(member, out_dir)
-                extracted.append(str(out))
+                if pathlib.Path(out).exists():   # silent failure on long Windows paths
+                    extracted.append(str(out))
     except Exception:
         pass
     return extracted
@@ -201,6 +206,41 @@ def _split_pdf(pdf_path: str, tmp_dir: pathlib.Path, chunk_pages: int) -> list:
         return []
 
 
+def _split_xlsx(xlsx_path: str, tmp_dir: pathlib.Path) -> list:
+    """Split an XLSX into one temp file per sheet. Returns list of paths."""
+    try:
+        import openpyxl, re as _re
+    except ImportError:
+        return []
+    try:
+        p = pathlib.Path(xlsx_path)
+        # peek at sheet names without loading data
+        wb = openpyxl.load_workbook(xlsx_path, read_only=True, data_only=True)
+        sheet_names = wb.sheetnames
+        wb.close()
+        if len(sheet_names) <= 1:
+            return []   # single-sheet; no point splitting
+        out_dir = tmp_dir / f"xlsx_{p.stem[:40]}"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        chunks = []
+        for i, name in enumerate(sheet_names):
+            wb_in  = openpyxl.load_workbook(xlsx_path, read_only=True, data_only=True)
+            ws_in  = wb_in[name]
+            wb_out = openpyxl.Workbook(write_only=True)
+            ws_out = wb_out.create_sheet(name)
+            for row in ws_in.iter_rows(values_only=True):
+                ws_out.append([v for v in row])
+            safe  = _re.sub(r'[<>:"/\\|?*\x00-\x1f]', "_", name)[:30]
+            out_p = out_dir / f"sheet_{i+1:03d}_{safe}.xlsx"
+            wb_out.save(str(out_p))
+            wb_in.close()
+            if pathlib.Path(out_p).exists():
+                chunks.append(str(out_p))
+        return chunks
+    except Exception:
+        return []
+
+
 def _expand_files(
     all_files: list,
     tmp_dir: pathlib.Path,
@@ -208,9 +248,9 @@ def _expand_files(
     pdf_chunk_pages: int,
 ) -> tuple:
     """
-    Replace large ZIPs / PDFs with their smaller constituents.
-    Returns (expanded_list, split_log) where split_log is a list of summary strings.
-    Files that cannot be expanded are kept as-is (processed last via size sort).
+    Replace large ZIPs / PDFs / XLSX with their smaller constituents.
+    Returns (expanded_list, split_log).
+    Files that cannot be expanded are kept as-is (sorted last via size sort).
     """
     split_log = []
     result_small = []   # files that were expanded or are small
@@ -246,6 +286,16 @@ def _expand_files(
             else:
                 split_log.append(f"  PDF  {p.name} ({size/1024**2:.1f} MB) → split failed, kept whole")
                 result_large.append(path)
+        elif ext == ".xlsx" and size > threshold_bytes:
+            sheets = _split_xlsx(path, tmp_dir)
+            if sheets:
+                split_log.append(
+                    f"  XLSX {p.name} ({size/1024**2:.1f} MB) → {len(sheets)} sheet files"
+                )
+                result_small.extend(sheets)
+            else:
+                split_log.append(f"  XLSX {p.name} ({size/1024**2:.1f} MB) → split failed, kept whole")
+                result_large.append(path)
         else:
             if size > threshold_bytes:
                 result_large.append(path)   # large unsplittable → end of queue
@@ -279,7 +329,7 @@ def _file_timeout(size_bytes: int, base: int) -> int:
 # ---------------------------------------------------------------------------
 
 class WorkerSubprocess:
-    STARTUP_TIMEOUT = 60
+    STARTUP_TIMEOUT = 90   # covers ONNX pre-warm (8-15 s) + startup
 
     def __init__(self, proj_path: str, cpu_threads: int = 1):
         self.alive = False
