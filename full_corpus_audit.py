@@ -548,6 +548,8 @@ def main():
                     help="Pages per PDF chunk when splitting (default 20)")
     ap.add_argument("--exclude", action="append", default=[], metavar="PATTERN",
                     help="Skip source files whose name contains PATTERN (case-insensitive, repeatable)")
+    ap.add_argument("--skip-large", action="store_true",
+                    help="Skip (do not expand or test) files above --expand-threshold instead of splitting them")
     args = ap.parse_args()
 
     auto_ocr = not args.no_ocr
@@ -576,6 +578,18 @@ def main():
             continue
         raw_files.append(str(f))
 
+    # ── Optionally drop files above expand-threshold ──────────────────────────
+    skipped_large = []
+    if args.skip_large:
+        threshold_bytes = args.expand_threshold * 1024 * 1024
+        kept, skipped_large = [], []
+        for fp in raw_files:
+            if pathlib.Path(fp).stat().st_size > threshold_bytes:
+                skipped_large.append(fp)
+            else:
+                kept.append(fp)
+        raw_files = kept
+
     # ── Expand large ZIPs / split large PDFs ─────────────────────────────────
     tmp_dir = pathlib.Path(tempfile.mkdtemp(prefix="audit_expand_"))
     try:
@@ -593,6 +607,8 @@ def main():
         print(f"  OCR: {'on' if auto_ocr else 'off'}")
         if exclude_patterns:
             print(f"  Excluded: {', '.join(args.exclude)}")
+        if skipped_large:
+            print(f"  Skipped (>{args.expand_threshold} MB): {len(skipped_large)} file(s)")
         if split_log:
             print(f"  Expanded {len(split_log)} large file(s):")
             for line in split_log:
