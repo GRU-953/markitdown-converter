@@ -433,17 +433,27 @@ function renderFiles() {
        </div>
        <i class="ti ${STAT_ICON[f.status]} fstat ${f.status}" aria-hidden="true"></i>
        <button class="fx" data-x="${i}" aria-label="${esc(t('convert.removeFile'))}"><i class="ti ti-x"></i></button>`;
+    row.tabIndex = i === selected ? 0 : -1;
+    row.setAttribute("role", "option");
+    row.setAttribute("aria-selected", i === selected ? "true" : "false");
     row.addEventListener("click", (e) => { if (!e.target.closest(".fx")) selectFile(i); });
+    row.addEventListener("keydown", (e) => {
+      if ((e.key === "Enter" || e.key === " ") && !e.target.closest(".fx")) { e.preventDefault(); selectFile(i); }
+    });
     row.querySelector(".fx").addEventListener("click", () => removeFile(i));
     setupRowDrag(row, i);
     list.appendChild(row);
   });
 }
 function selectFile(i) {
+  const hadRowFocus = document.activeElement && document.activeElement.classList.contains("file-row");
   selected = i; renderFiles(); renderOutput();
   if (i >= 0) {
     const rows = document.querySelectorAll(".file-row");
-    if (rows[i]) rows[i].scrollIntoView({ block: "nearest", behavior: isLowEnd ? "instant" : "smooth" });
+    if (rows[i]) {
+      rows[i].scrollIntoView({ block: "nearest", behavior: isLowEnd ? "instant" : "smooth" });
+      if (hadRowFocus) rows[i].focus({ preventScroll: true });
+    }
   }
 }
 function removeFile(i) {
@@ -495,8 +505,19 @@ function renderOutput() {
     ed.style.display = "block"; pv.style.display = "none"; ed.value = text;
   } else {
     ed.style.display = "none"; pv.style.display = "block";
-    pv.innerHTML = text ? marked.parse(text)
-      : '<div class="empty"><i class="ti ti-file-text" aria-hidden="true"></i><span>' + esc(t("preview.selectFile")) + '</span></div>';
+    if (!text) {
+      pv.innerHTML = '<div class="empty"><i class="ti ti-file-text" aria-hidden="true"></i><span>' + esc(t("preview.selectFile")) + '</span></div>';
+    } else {
+      const MAX_PREVIEW = 80000;
+      const chunk = text.length > MAX_PREVIEW ? text.slice(0, MAX_PREVIEW) : text;
+      pv.innerHTML = marked.parse(chunk);
+      if (text.length > MAX_PREVIEW) {
+        const note = document.createElement("p");
+        note.style.cssText = "color:var(--text-muted);font-size:13px;margin-top:1em;font-style:italic";
+        note.textContent = t("preview.truncated", { shown: (MAX_PREVIEW / 1000).toFixed(0), total: Math.ceil(text.length / 1000) });
+        pv.appendChild(note);
+      }
+    }
     pv.classList.toggle("bn", /[ঀ-৿]/.test(text));
   }
   updateWordCount(text);

@@ -48,6 +48,7 @@
   "btn.export": "এক্সপোর্ট",
   "btn.exportAll": "সব এক্সপোর্ট করুন",
   "preview.selectFile": "একটি রূপান্তরিত ফাইল বেছে নিন।",
+  "preview.truncated": "প্রিভিউ প্রথম {shown} KB দেখাচ্ছে (মোট {total} KB)। সম্পূর্ণ লেখা দেখতে Edit ট্যাব ব্যবহার করুন।",
 
   "convert.converting": "রূপান্তর হচ্ছে {done} / {total}…",
   "convert.fileType.image": "ছবি",

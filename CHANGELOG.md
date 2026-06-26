@@ -4,6 +4,18 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.14] — 2026-06-26
+
+### Improved — file list is now fully keyboard-navigable
+- Each file row can receive keyboard focus. The currently-selected row has `tabindex="0"` so Tab cycles into the list; all other rows use `tabindex="-1"` so Tab does not get stuck cycling through every file. Once focus is in the list, **Arrow Up / Arrow Down** move between files (existing behaviour, now visible with a focus ring) and **Enter** or **Space** selects the focused row.
+- The file list container is marked `role="listbox"` with `aria-selected` on each row, giving screen readers correct semantic context.
+- When arrow-key navigation moves to a new row while a row already has keyboard focus, focus follows automatically so the visual focus indicator stays in sync.
+
+### Improved — large preview is now safely truncated
+- If a converted file produces more than 80 000 characters of text (roughly 80 KB — most common with large PDFs or dense spreadsheets), the preview panel now renders only the first 80 KB and appends a notice explaining how much is hidden. This prevents `marked.parse()` from blocking the main thread for several seconds on very large outputs. The full text remains accessible via the Edit tab and is exported in full.
+
+---
+
 ## [v4.10.13] — 2026-06-26
 
 ### Fixed — system-info failure now defaults to low-end mode

@@ -48,6 +48,7 @@
   "btn.export": "Export",
   "btn.exportAll": "Export all",
   "preview.selectFile": "Select a converted file",
+  "preview.truncated": "Preview shows first {shown} KB of {total} KB. Switch to Edit to see the full text.",
 
   "convert.converting": "Converting {done} / {total}…",
   "convert.fileType.image": "image",
