@@ -1181,6 +1181,65 @@ class TestPptxFontDetection:
             z.writestr("ppt/slideLayouts/slideLayout1.xml", xml)
         assert _pptx_font_has_bijoy(str(pptx_path)) is True
 
+    def test_ea_font_tag_detected(self, tmp_path):
+        """Bijoy font in a:ea (East Asian) run property tag → True."""
+        import zipfile
+        pptx_path = tmp_path / "ea_font.pptx"
+        xml = (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"'
+            '       xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">'
+            '<p:cSld><p:spTree><p:sp><p:txBody><a:p><a:r>'
+            '<a:rPr><a:ea typeface="SutonnyMJ"/></a:rPr>'
+            '<a:t>evsjv</a:t>'
+            '</a:r></a:p></p:txBody></p:sp></p:spTree></p:cSld></p:sld>'
+        )
+        with zipfile.ZipFile(str(pptx_path), "w") as z:
+            z.writestr("ppt/slides/slide1.xml", xml)
+        assert _pptx_font_has_bijoy(str(pptx_path)) is True
+
+    def test_ppsm_also_triggers_font_detection(self, tmp_path, monkeypatch):
+        """.ppsm is in _PPTX_EXTS → font detection applies."""
+        f = _touch(tmp_path, "show.ppsm")
+        monkeypatch.setattr(pipeline, "_pptx_font_has_bijoy", lambda p: True)
+        out = convert_file(
+            str(f),
+            markitdown=FakeMarkItDown("evsjv"),
+            auto_bijoy=True,
+            is_bijoy_func=lambda t: False,
+            bijoy_func=lambda t: "বাংলা",
+        )
+        assert "bijoy" in out["steps"]
+        assert out["text"] == "বাংলা"
+
+    def test_potx_also_triggers_font_detection(self, tmp_path, monkeypatch):
+        """.potx (PowerPoint template) is in _PPTX_EXTS → font detection applies."""
+        f = _touch(tmp_path, "template.potx")
+        monkeypatch.setattr(pipeline, "_pptx_font_has_bijoy", lambda p: True)
+        out = convert_file(
+            str(f),
+            markitdown=FakeMarkItDown("evsjv"),
+            auto_bijoy=True,
+            is_bijoy_func=lambda t: False,
+            bijoy_func=lambda t: "বাংলা",
+        )
+        assert "bijoy" in out["steps"]
+        assert out["text"] == "বাংলা"
+
+    def test_potm_also_triggers_font_detection(self, tmp_path, monkeypatch):
+        """.potm (macro-enabled template) is in _PPTX_EXTS → font detection applies."""
+        f = _touch(tmp_path, "macro_template.potm")
+        monkeypatch.setattr(pipeline, "_pptx_font_has_bijoy", lambda p: True)
+        out = convert_file(
+            str(f),
+            markitdown=FakeMarkItDown("evsjv"),
+            auto_bijoy=True,
+            is_bijoy_func=lambda t: False,
+            bijoy_func=lambda t: "বাংলা",
+        )
+        assert "bijoy" in out["steps"]
+        assert out["text"] == "বাংলা"
+
     def test_empty_zip_no_parts_returns_false(self, tmp_path):
         """PPTX ZIP with no matching XML parts → parts is empty → False."""
         import zipfile

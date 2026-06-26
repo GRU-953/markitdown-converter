@@ -4,6 +4,17 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.52] — 2026-06-27
+
+### Tests — PPTX remaining extensions (.ppsm, .potx, .potm) and a:ea tag (256 total, up from 252)
+
+- `TestPptxFontDetection.test_ea_font_tag_detected`: Bijoy font in `a:ea` (East Asian) run-property tag detected — completes the three DrawingML font tags (latin, cs, ea)
+- `TestPptxFontDetection.test_ppsm_also_triggers_font_detection`: `.ppsm` extension in `_PPTX_EXTS` → font detection applies
+- `TestPptxFontDetection.test_potx_also_triggers_font_detection`: `.potx` (PowerPoint template) extension → font detection applies
+- `TestPptxFontDetection.test_potm_also_triggers_font_detection`: `.potm` (macro-enabled template) extension → font detection applies
+
+---
+
 ## [v4.10.51] — 2026-06-27
 
 ### Tests — PPTX slide-layout path and ODT fo:font-name comma-suffix (252 total, up from 250)
