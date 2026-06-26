@@ -90,12 +90,21 @@ function showOnboarding() {
   const el = $("onboard");
   if (!el) return;
   el.style.display = "flex";
-  const close = () => { el.style.display = "none"; save({ onboarding_seen: true }); };
+
+  function onKey(e) {
+    if (e.key === "Escape") { close(); return; }
+    if (e.key === "Tab") { e.preventDefault(); $("onboard-close").focus(); }
+  }
+  function close() {
+    el.style.display = "none";
+    el.removeEventListener("keydown", onKey);
+    save({ onboarding_seen: true });
+  }
+
   $("onboard-close").onclick = close;
   el.addEventListener("click", (e) => { if (e.target === el) close(); });
-  document.addEventListener("keydown", function esc(e) {
-    if (e.key === "Escape" && el.style.display !== "none") { close(); document.removeEventListener("keydown", esc); }
-  });
+  el.addEventListener("keydown", onKey);
+  $("onboard-close").focus();
 }
 
 function renderUpdateBanner() {
@@ -554,23 +563,33 @@ function segPick(sel, btn) {
   });
   btn.classList.add("active"); btn.setAttribute("aria-checked", "true");
 }
+let _pickFormatOpen = false;
 async function pickFormat() {
+  if (_pickFormatOpen) return null;
+  _pickFormatOpen = true;
   return new Promise(resolve => {
     const wrap = document.createElement("div");
     wrap.className = "modal-backdrop";
+    wrap.setAttribute("role", "dialog");
+    wrap.setAttribute("aria-modal", "true");
     wrap.innerHTML = `<div class="modal-card">
       <div class="modal-title">${esc(t("export.title"))}</div>
       <div class="row" style="gap:8px;">
         ${["md", "html", "txt"].map(f => `<button class="btn" data-f="${f}" style="flex:1;justify-content:center;">${f.toUpperCase()}</button>`).join("")}
       </div></div>`;
     document.body.appendChild(wrap);
-    const dismiss = (val) => { resolve(val); wrap.remove(); document.removeEventListener("keydown", onKey); };
+    const dismiss = (val) => {
+      _pickFormatOpen = false;
+      resolve(val); wrap.remove();
+      document.removeEventListener("keydown", onKey);
+    };
     const onKey = (e) => { if (e.key === "Escape") dismiss(null); };
     document.addEventListener("keydown", onKey);
     wrap.addEventListener("click", e => {
       if (e.target.dataset.f) dismiss(e.target.dataset.f);
       else if (e.target === wrap) dismiss(null);
     });
+    wrap.querySelector("button").focus();
   });
 }
 async function copyText(txt) {

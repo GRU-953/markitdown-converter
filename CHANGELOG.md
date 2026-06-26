@@ -4,6 +4,21 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.6] — 2026-06-26
+
+### Fixed — export format modal double-open and focus
+- `pickFormat()` now has a guard (`_pickFormatOpen` flag) that returns `null` immediately if the modal is already visible. Rapid double-clicks on Export no longer produce two overlapping modals.
+- The modal now sets `role="dialog" aria-modal="true"` and moves keyboard focus to the first format button when it opens.
+- The dismiss path clears the guard flag so subsequent exports work normally.
+
+### Fixed — onboarding focus trap and initial focus
+- When the onboarding overlay appears, keyboard focus is now moved to the "Get started" button so the user can dismiss it with the keyboard (Enter/Space) without tabbing there first.
+- Pressing Tab while the overlay is open now keeps focus on that button (there is only one interactive element) instead of letting it leak through to the window behind.
+- Pressing Escape closes the overlay and cleans up the keydown listener.
+- The `keydown` listener is now on the overlay element (not `document`), so it is automatically removed along with the element and does not linger.
+
+---
+
 ## [v4.10.5] — 2026-06-26
 
 ### Fixed — convert loop robustness
