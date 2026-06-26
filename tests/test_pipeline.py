@@ -409,6 +409,15 @@ class TestUnsupported:
         with pytest.raises(ValueError, match="(?i)unsupported format"):
             convert_file(str(f))
 
+    def test_mac_resource_fork_returns_empty(self, tmp_path):
+        """Files named ._<anything> are macOS resource-fork sidecars; they look
+        like images but contain binary metadata.  convert_file must return empty
+        text without raising so the pipeline stays silent on these files."""
+        f = _touch(tmp_path, "._photo.jpg")
+        out = convert_file(str(f))
+        assert out["text"] == ""
+        assert out["steps"] == ["mac_resource_fork"]
+
 
 # ── T-4: ocr_empty step ───────────────────────────────────────────────────────
 

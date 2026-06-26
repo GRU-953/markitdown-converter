@@ -4,6 +4,24 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.68] — 2026-06-27
+
+### Fix — macOS resource-fork sidecar files no longer crash the pipeline (331 tests)
+
+macOS writes binary `._<filename>` sidecar files inside ZIP archives to store extended
+attributes.  These files look like images by extension but are not readable by PIL,
+causing `RuntimeError: OCR failed: cannot identify image file` for every such file.
+
+`convert_file` now checks `path.name.startswith("._")` immediately after the
+unsupported-format guard and returns `{"text": "", "steps": ["mac_resource_fork"]}`
+without attempting OCR.  This eliminates the 7 ERRORs seen in the integration audit
+of `D:\Test_files` (972 files) where macOS ZIP archives had deposited these sidecars.
+
+One new test: `TestUnsupported.test_mac_resource_fork_returns_empty` — a `._photo.jpg`
+file yields empty text and the `mac_resource_fork` step, no exception.
+
+---
+
 ## [v4.10.67] — 2026-06-27
 
 ### Tests — whitespace normalisation and FIB guard branches (330 total, up from 326)

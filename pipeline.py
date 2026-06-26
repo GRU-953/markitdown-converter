@@ -500,6 +500,11 @@ def convert_file(
             "vector graphics, font files, or design documents."
         )
 
+    # macOS writes binary resource-fork sidecar files named ._<original>
+    # inside ZIP archives; they look like images but are not readable by PIL.
+    if p.name.startswith("._"):
+        return {"text": "", "steps": ["mac_resource_fork"]}
+
     steps = []
     _rtf_raw = ""  # populated in the RTF branch; used for font-name detection below
 
