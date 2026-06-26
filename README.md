@@ -12,7 +12,7 @@ Word files, PDFs, spreadsheets, and images — converted instantly, with no tech
 
 [![Download](https://img.shields.io/github/v/release/GRU-953/gru953-markdown?style=for-the-badge&color=0A6E5C&label=Download%20for%20Windows&logo=windows&logoColor=white)](https://github.com/GRU-953/gru953-markdown/releases/latest)
 &nbsp;
-[![License](https://img.shields.io/badge/Free%20%26%20Open%20Source-MIT-3A4A9E?style=for-the-badge)](LICENSE)
+[![License](https://img.shields.io/badge/Free%20%26%20Open%20Source-Apache--2.0-3A4A9E?style=for-the-badge)](LICENSE)
 &nbsp;
 [![CI](https://img.shields.io/github/actions/workflow/status/GRU-953/gru953-markdown/ci.yml?branch=main&style=for-the-badge&label=Tests&color=0A6E5C)](https://github.com/GRU-953/gru953-markdown/actions)
 
@@ -96,6 +96,12 @@ Every theme works in both **Light** and **Dark** mode. Switch anytime — your c
 
 ---
 
+## 🌐 English & বাংলা
+
+The whole app speaks both **English** and **Bangla**. Use the language toggle at the top to switch — every button, message, and label changes instantly, in proper Unicode Bangla.
+
+---
+
 ## ❓ Need help?
 
 Something not converting correctly? Got a question?
@@ -148,4 +154,4 @@ See [CHANGELOG.md](CHANGELOG.md) for version history.
 
 ---
 
-**License:** MIT — free to use, modify, and share. See [LICENSE](LICENSE).
+**License:** Apache-2.0 — free to use, modify, and share. See [LICENSE](LICENSE).

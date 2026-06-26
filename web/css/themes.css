@@ -1,67 +1,125 @@
-/* GRU953 Markdown — theming system (GRU953 Open Spectrum palette)
-   Neutrals switch by [data-mode]; accent colours switch by [data-palette].
-   Three palettes: GRU953 Teal · GRU953 Indigo · GRU953 Amber — each in light/dark. */
+/* GRU953 Markdown — design-system foundation (GRU953 Open Spectrum)
+   Variable NAMES are a contract consumed by styles.css — do not rename, only revalue.
+   Neutrals + status switch by [data-mode]; accent colours switch by [data-palette].
+   Three palette keys preserved for stored settings:
+     data-palette="indigo" = GRU953 Teal   (default)
+     data-palette="violet" = GRU953 Indigo
+     data-palette="slate"  = GRU953 Amber
+   WCAG 2.2 AA: darker brand steps carry text on light, lighter steps on dark. */
 
 :root {
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 20px;
-  --font-ui: "DM Sans", "Segoe UI", system-ui, sans-serif;
-  --font-bn: "Noto Sans Bengali", "DM Sans", sans-serif;
+  /* ── Spacing scale — 8px grid with a 4px half-step ──────────────────────── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --space-5: 32px;
+  --space-6: 48px;
+  --space-7: 64px;
+
+  /* ── Radii ──────────────────────────────────────────────────────────────── */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+
+  /* ── Typography ─────────────────────────────────────────────────────────── */
+  --font-ui:   "DM Sans", "Segoe UI", system-ui, sans-serif;
+  --font-bn:   "Noto Sans Bengali", "DM Sans", sans-serif;
   --font-mono: "JetBrains Mono", "Cascadia Code", "Consolas", monospace;
+
+  /* ── Layout ─────────────────────────────────────────────────────────────── */
   --sidebar-w: 76px;
-  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ── Motion ─────────────────────────────────────────────────────────────── */
+  --ease:         cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-micro:    150ms;
+  --dur-std:      250ms;
+  --dur-entrance: 400ms;
+
+  /* ── Focus ring (brand Indigo; >=3:1 against every surface, both modes) ──── */
+  --focus-ring: #3A4A9E;
 }
 
-/* ── Neutral surfaces — GRU953 Open Spectrum ──────────────────────────────── */
-[data-mode="dark"] {
-  --bg:        #10211D;
-  --surface:   #18302A;
-  --surface-2: #20403A;
-  --surface-3: #2A5048;
-  --border:    #2E423B;
-  --border-2:  #3A4F47;
-  --text:      #E8EEEB;
-  --text-muted:#9DA9A3;
-  --text-faint:#6E7A75;
-  --shadow:    0 8px 30px rgba(0,0,0,0.45);
-  --overlay:   rgba(6,15,12,0.62);
-}
+/* ── Neutral surfaces — light ─────────────────────────────────────────────── */
 [data-mode="light"] {
-  --bg:        #F7F8F7;
-  --surface:   #FFFFFF;
-  --surface-2: #EEF1EF;
-  --surface-3: #DFE4E1;
-  --border:    #DFE4E1;
-  --border-2:  #C6CEC9;
-  --text:      #16201C;
-  --text-muted:#54605B;
-  --text-faint:#9BA7A1;
-  --shadow:    0 8px 30px rgba(22,32,28,0.12);
-  --overlay:   rgba(22,32,28,0.35);
+  --bg:         #F7F8F7;   /* neutral-50  */
+  --surface:    #FFFFFF;   /* neutral-0   */
+  --surface-2:  #EEF1EF;   /* neutral-100 */
+  --surface-3:  #DFE4E1;   /* neutral-200 */
+  --border:     #DFE4E1;   /* neutral-200 */
+  --border-2:   #C6CEC9;   /* neutral-300 */
+  --text:       #16201C;   /* neutral-900  — 16.7:1 on surface */
+  --text-muted: #54605B;   /* neutral-600  — 6.56:1 on surface */
+  --text-faint: #7E8A84;   /* >=3.37:1 (non-essential hint/large) */
+  --shadow:     0 8px 30px rgba(22,32,28,0.12);
+  --overlay:    rgba(22,32,28,0.35);
+  --focus-ring: #3A4A9E;   /* indigo-600 — 7.43:1 on bg */
 }
 
-/* ── Status colours (GRU953 semantic tokens) ──────────────────────────────── */
+/* ── Neutral surfaces — dark (bg never pure black) ────────────────────────── */
 [data-mode="dark"] {
-  --ok:   #6FD0BC;  --ok-bg:   rgba(111,208,188,0.14);
-  --err:  #F3A48E;  --err-bg:  rgba(243,164,142,0.14);
-  --warn: #F4B53C;  --warn-bg: rgba(244,181,60,0.14);
+  --bg:         #10211D;
+  --surface:    #18302A;
+  --surface-2:  #20403A;
+  --surface-3:  #2A5048;
+  --border:     #2E423B;
+  --border-2:   #3A4F47;
+  --text:       #E8EEEB;   /* 11.95:1 on surface */
+  --text-muted: #9DA9A3;   /* 5.78:1 on surface  */
+  --text-faint: #7E8A84;   /* >=3:1 on surface (non-essential) */
+  --shadow:     0 8px 30px rgba(0,0,0,0.45);
+  --overlay:    rgba(6,15,12,0.62);
+  --focus-ring: #97A3E0;   /* indigo-300 — 6.86:1 on bg */
 }
+
+/* ── Status colours (semantic) ────────────────────────────────────────────── */
 [data-mode="light"] {
-  --ok:   #18794D;  --ok-bg:   rgba(24,121,77,0.10);
-  --err:  #C8453B;  --err-bg:  rgba(200,69,59,0.09);
-  --warn: #9C6B12;  --warn-bg: rgba(156,107,18,0.10);
+  --ok:   #18794D;  --ok-bg:   rgba(24,121,77,0.10);   /* 5.41:1 */
+  --err:  #C8453B;  --err-bg:  rgba(200,69,59,0.09);   /* 4.81:1 */
+  --warn: #9C6B12;  --warn-bg: rgba(156,107,18,0.10);  /* 4.64:1 */
+}
+[data-mode="dark"] {
+  --ok:   #6FD0BC;  --ok-bg:   rgba(111,208,188,0.14); /* 7.64:1 */
+  --err:  #F3A48E;  --err-bg:  rgba(243,164,142,0.14); /* 7.03:1 */
+  --warn: #F4B53C;  --warn-bg: rgba(244,181,60,0.14);  /* 7.71:1 */
 }
 
-/* ── Palette: GRU953 Teal ─────────────────────────────────────────────────── */
-[data-palette="indigo"] { --primary:#0A6E5C; --primary-hover:#074D40; --accent:#3A4A9E; --on-primary:#FFFFFF; --primary-soft:rgba(10,110,92,0.12); }
-[data-palette="indigo"][data-mode="dark"] { --primary:#14A88A; --primary-hover:#6FD0BC; --accent:#97A3E0; --on-primary:#10211D; --primary-soft:rgba(20,168,138,0.18); }
+/* ── Palette: GRU953 Teal (key "indigo", default) ─────────────────────────── */
+[data-palette="indigo"] {
+  --primary:#0A6E5C; --primary-hover:#074D40; --accent:#3A4A9E;
+  --on-primary:#FFFFFF; --primary-soft:rgba(10,110,92,0.12);
+}
+[data-palette="indigo"][data-mode="dark"] {
+  --primary:#14A88A; --primary-hover:#6FD0BC; --accent:#97A3E0;
+  --on-primary:#10211D; --primary-soft:rgba(20,168,138,0.18);
+}
 
-/* ── Palette: GRU953 Indigo ───────────────────────────────────────────────── */
-[data-palette="violet"] { --primary:#3A4A9E; --primary-hover:#26336E; --accent:#0A6E5C; --on-primary:#FFFFFF; --primary-soft:rgba(58,74,158,0.12); }
-[data-palette="violet"][data-mode="dark"] { --primary:#97A3E0; --primary-hover:#C7CEEE; --accent:#6FD0BC; --on-primary:#10211D; --primary-soft:rgba(151,163,224,0.18); }
+/* ── Palette: GRU953 Indigo (key "violet") ────────────────────────────────── */
+[data-palette="violet"] {
+  --primary:#3A4A9E; --primary-hover:#26336E; --accent:#0A6E5C;
+  --on-primary:#FFFFFF; --primary-soft:rgba(58,74,158,0.12);
+}
+[data-palette="violet"][data-mode="dark"] {
+  --primary:#97A3E0; --primary-hover:#C7CEEE; --accent:#6FD0BC;
+  --on-primary:#10211D; --primary-soft:rgba(151,163,224,0.18);
+}
 
-/* ── Palette: GRU953 Amber ────────────────────────────────────────────────── */
-[data-palette="slate"] { --primary:#9C6B12; --primary-hover:#7A5210; --accent:#0A6E5C; --on-primary:#FFFFFF; --primary-soft:rgba(156,107,18,0.13); }
-[data-palette="slate"][data-mode="dark"] { --primary:#F4B53C; --primary-hover:#E0990F; --accent:#14A88A; --on-primary:#16201C; --primary-soft:rgba(244,181,60,0.16); }
+/* ── Palette: GRU953 Amber (key "slate") ──────────────────────────────────── */
+[data-palette="slate"] {
+  --primary:#9C6B12; --primary-hover:#7A5210; --accent:#0A6E5C;
+  --on-primary:#FFFFFF; --primary-soft:rgba(156,107,18,0.13);
+}
+[data-palette="slate"][data-mode="dark"] {
+  --primary:#F4B53C; --primary-hover:#E0990F; --accent:#14A88A;
+  --on-primary:#16201C; --primary-soft:rgba(244,181,60,0.16);
+}
+
+/* ── Honour reduced-motion globally (components scope their own too) ───────── */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-micro: 0ms;
+    --dur-std: 0ms;
+    --dur-entrance: 0ms;
+  }
+}

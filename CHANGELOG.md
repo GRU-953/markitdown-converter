@@ -4,6 +4,35 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.8.0] — 2026-06-26
+
+### Added — bilingual interface
+- **Full English / বাংলা language toggle** in the top bar. Every label, button, placeholder, tooltip, toast, and error message is translated, with native modern-standard Bangla (চলিত, respectful আপনি). Switching swaps the whole UI to Noto Sans Bengali. Choice is remembered. Catalogues live in `locales/en.json` + `locales/bn.json` (153 keys each), loaded through the `get_locales()` bridge.
+
+### Changed — ground-up redesign to the GRU953 brand
+- **New app icon**: the GRU953 master mark — **the Soaring Bird** — rendered in the Open Spectrum gradient (indigo → teal → amber → coral) on an ink `#10211D` tile, replacing the previous "M" glyph. Used for the window, sidebar, onboarding, and built `.exe`.
+- **Full UI overhaul** against the brand design system: 8px spacing grid, `--radius-sm/md/lg/xl` scale, borders-over-shadows elevation, motion tokens (150/250/400 ms) honouring `prefers-reduced-motion`, every interactive control shipping all 8 states, and `≥44 × 44 px` touch targets throughout.
+- **Accessibility (WCAG 2.2 AA)**: every text/background pair contrast-verified in light and dark; visible `:focus-visible` rings (≥3:1); status conveyed by icon + text, never colour alone; radiogroup semantics on segmented controls and palette cards; the four designed states (empty, loading, error, offline).
+
+### Changed — licence & governance
+- **Licence migrated MIT → Apache-2.0** with SPDX headers on source files and a `NOTICE` listing bundled third-party components.
+- Added the brand-required governance files: `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md` (Contributor Covenant 2.1), `SECURITY.md`, `GOVERNANCE.md`, and `docs/design-system-notes.md`.
+
+---
+
+## [v4.7.0] — 2026-06-26
+
+### Added — quality-of-life
+- **Conversion progress counter** in the Convert button ("Converting 2 / 5…").
+- **Word & character count** in the output panel.
+- **Keyboard shortcuts**: Ctrl+O to add files, Ctrl+Enter to convert all.
+- **File size** shown in the file list; **last input folder** remembered across sessions.
+
+### Fixed
+- Corpus audit gained `--exclude` and `--skip-large` flags; raised base per-file timeout headroom for dense map PDFs.
+
+---
+
 ## [v4.6.0] — 2026-06-26
 
 ### Changed — brand rebrand

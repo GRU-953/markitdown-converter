@@ -1,0 +1,39 @@
+GRU953 Markdown
+Copyright 2026 Aninda Sundar Howlader (GRU-953).
+
+This product includes software developed by Aninda Sundar Howlader (GRU-953).
+
+Licensed under the Apache License, Version 2.0. See the LICENSE file for the
+full terms.
+
+--------------------------------------------------------------------------------
+Third-party components
+
+This distribution bundles or depends on the following third-party components.
+Each remains under its own licence; the licences are reproduced or referenced
+here for attribution as required.
+
+- Microsoft MarkItDown — document-to-Markdown conversion.
+  Copyright (c) Microsoft Corporation. Licensed under the MIT License.
+
+- Tesseract OCR — optical character recognition engine.
+  Copyright (c) the Tesseract contributors. Licensed under the Apache License,
+  Version 2.0.
+
+- pywebview — native web view window for the desktop application.
+  Copyright (c) Roman Sirokov and contributors. Licensed under the BSD 3-Clause
+  License.
+
+- marked — Markdown parser and renderer used in the web frontend.
+  Copyright (c) the marked contributors. Licensed under the MIT License.
+
+- Tabler Icons — interface icon set.
+  Copyright (c) Paweł Kuna. Licensed under the MIT License.
+
+- DM Sans — interface typeface.
+  Copyright (c) the DM Sans Project Authors. Licensed under the SIL Open Font
+  License, Version 1.1.
+
+- Noto Sans Bengali — Bengali-script typeface.
+  Copyright (c) the Noto Project Authors. Licensed under the SIL Open Font
+  License, Version 1.1.

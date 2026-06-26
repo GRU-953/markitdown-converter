@@ -1,14 +1,57 @@
 "use strict";
 
 /* ── State ──────────────────────────────────────────────────────────────── */
-let cfg = { theme: "System", palette: "indigo", ocr_language: "English",
-            auto_ocr: true, auto_bijoy: true };
+let cfg = { theme: "System", palette: "indigo", language: "en",
+            ocr_language: "English", auto_ocr: true, auto_bijoy: true };
 let files = [];          // {path, name, is_image, status, text, steps, error}
 let selected = -1;
 let ocrPath = null;
+let ocrName = "";
 let outMode = "preview"; // preview | edit
+let LOCALES = {};        // { en: {...}, bn: {...} }
+let lang = "en";         // active UI language
 const $ = (id) => document.getElementById(id);
 const api = () => window.pywebview.api;
+
+/* ── i18n ─────────────────────────────────────────────────────────────────── */
+function hasKey(key) {
+  return (LOCALES[lang] && key in LOCALES[lang]) || (LOCALES.en && key in LOCALES.en);
+}
+function t(key, vars) {
+  const dict = LOCALES[lang] || {};
+  const fallback = LOCALES.en || {};
+  let s = (key in dict ? dict[key] : (key in fallback ? fallback[key] : key));
+  if (vars) for (const k in vars) s = s.split("{" + k + "}").join(vars[k]);
+  return s;
+}
+function applyI18n(root) {
+  const scope = root || document;
+  // When locales failed to load, leave the English HTML defaults untouched.
+  scope.querySelectorAll("[data-i18n]").forEach(el => { if (hasKey(el.dataset.i18n)) el.textContent = t(el.dataset.i18n); });
+  scope.querySelectorAll("[data-i18n-ph]").forEach(el => { if (hasKey(el.dataset.i18nPh)) el.placeholder = t(el.dataset.i18nPh); });
+  scope.querySelectorAll("[data-i18n-title]").forEach(el => {
+    if (!hasKey(el.dataset.i18nTitle)) return;
+    const v = t(el.dataset.i18nTitle); el.title = v; el.setAttribute("aria-label", v);
+  });
+}
+function applyLang() {
+  document.documentElement.setAttribute("lang", lang === "bn" ? "bn" : "en");
+  document.documentElement.setAttribute("data-lang", lang);
+  document.querySelectorAll("#lang-seg button").forEach(b => {
+    const on = b.dataset.lang === lang;
+    b.classList.toggle("active", on);
+    b.setAttribute("aria-checked", on ? "true" : "false");
+  });
+  applyI18n();
+  // Re-render anything whose text is built in JS.
+  renderFiles();
+  renderOutput();
+  refreshOcrLabel();
+  refreshDetectPill();
+  populateAbout();
+  const histView = $("view-history");
+  if (histView && histView.classList.contains("active")) renderHistory();
+}
 
 /* ── Boot ───────────────────────────────────────────────────────────────── */
 function boot() {
@@ -19,37 +62,35 @@ function boot() {
 }
 async function start() {
   try { cfg = Object.assign(cfg, await api().get_config()); } catch (e) {}
+  try { LOCALES = await api().get_locales(); } catch (e) { LOCALES = {}; }
+  lang = (cfg.language === "bn") ? "bn" : "en";
   applyTheme(); applyPalette();
-  wireNav(); wireMode(); wirePalette(); wireConvert(); wireOcr(); wireBijoy();
-  wireHistory(); wireSettings();
+  wireNav(); wireMode(); wireLang(); wirePalette(); wireConvert(); wireOcr(); wireBijoy();
+  wireHistory(); wireSettings(); wireOffline();
   syncSettingsControls();
+  applyLang();
   renderFiles(); renderOutput();
   checkForUpdate();
   if (!cfg.onboarding_seen) showOnboarding();
-  populateAbout();
 }
 
 async function populateAbout() {
   try {
     const ver = await api().get_version();
-    const el = document.getElementById("about-ver");
-    if (el) el.textContent = `GRU953 Markdown ${ver} · GRU953`;
+    const el = $("about-ver");
+    if (el) el.textContent = t("settings.about.version", { version: ver });
   } catch (e) {}
 }
 
 function showOnboarding() {
-  const el = document.getElementById("onboard");
+  const el = $("onboard");
   if (!el) return;
   el.style.display = "flex";
-  document.getElementById("onboard-close").onclick = () => {
-    el.style.display = "none";
-    save({ onboarding_seen: true });
-  };
-  el.addEventListener("click", (e) => {
-    if (e.target === el) {
-      el.style.display = "none";
-      save({ onboarding_seen: true });
-    }
+  const close = () => { el.style.display = "none"; save({ onboarding_seen: true }); };
+  $("onboard-close").onclick = close;
+  el.addEventListener("click", (e) => { if (e.target === el) close(); });
+  document.addEventListener("keydown", function esc(e) {
+    if (e.key === "Escape" && el.style.display !== "none") { close(); document.removeEventListener("keydown", esc); }
   });
 }
 
@@ -57,17 +98,24 @@ async function checkForUpdate() {
   try {
     const info = await api().check_update();
     if (!info || !info.has_update) return;
-    const banner = document.getElementById("update-banner");
-    const msg = document.getElementById("update-msg");
-    const link = document.getElementById("update-link");
-    msg.textContent = `Update available: ${info.latest}`;
+    const banner = $("update-banner");
+    $("update-msg").textContent = t("update.available", { version: info.latest });
+    const link = $("update-link");
     link.href = info.url;
     link.onclick = (e) => { e.preventDefault(); window.open(info.url); };
     banner.style.display = "flex";
   } catch (e) {}
 }
 
-/* ── Theme + palette ──────────────────────────────────────────────────────── */
+/* ── Offline awareness ──────────────────────────────────────────────────────── */
+function wireOffline() {
+  const update = () => { $("offline-banner").style.display = navigator.onLine ? "none" : "flex"; };
+  window.addEventListener("online", update);
+  window.addEventListener("offline", update);
+  update();
+}
+
+/* ── Theme + palette + language ───────────────────────────────────────────── */
 function resolveMode(theme) {
   if (theme === "System") {
     return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
@@ -76,71 +124,67 @@ function resolveMode(theme) {
 }
 function applyTheme() {
   document.documentElement.setAttribute("data-mode", resolveMode(cfg.theme));
-  document.querySelectorAll("#mode-seg button").forEach(b =>
-    b.classList.toggle("active", b.dataset.mode === cfg.theme));
+  document.querySelectorAll("#mode-seg button").forEach(b => {
+    const on = b.dataset.mode === cfg.theme;
+    b.classList.toggle("active", on);
+    b.setAttribute("aria-checked", on ? "true" : "false");
+  });
 }
 function applyPalette() {
   document.documentElement.setAttribute("data-palette", cfg.palette);
-  document.querySelectorAll(".palette-card").forEach(c =>
-    c.classList.toggle("active", c.dataset.palette === cfg.palette));
+  document.querySelectorAll(".palette-card").forEach(c => {
+    const on = c.dataset.palette === cfg.palette;
+    c.classList.toggle("active", on);
+    c.setAttribute("aria-checked", on ? "true" : "false");
+  });
 }
 function save(patch) { Object.assign(cfg, patch); if (window.pywebview) api().save_config(patch); }
 
 /* ── Error translation ────────────────────────────────────────────────────── */
 function friendlyError(raw) {
-  if (!raw) return "Something went wrong — please try again.";
+  if (!raw) return t("error.generic");
   const r = raw.toLowerCase();
-  if (r.includes("file not found") || r.includes("no such file"))
-    return "File not found. It may have been moved or deleted.";
-  if (r.includes("missingdependency"))
-    return "This file type isn't supported. Try converting it to PDF or .docx first.";
-  if (r.includes("tesseract not found"))
-    return "Text scanning (OCR) is unavailable — please reinstall the app.";
-  if (r.includes("pdf ocr requires pymupdf") || r.includes("no module named 'pymupdf'"))
-    return "PDF scanning requires a library that isn't installed. Try reinstalling the app.";
-  if (r.includes("failed to open") || r.includes("could not open pdf"))
-    return "This PDF couldn't be opened. It may be damaged or password-protected.";
-  if (r.includes("ocr failed") || r.includes("image_to_string"))
-    return "Couldn't read text from this image. Try a clearer photo or a different file.";
-  if (r.includes("permission") || r.includes("access is denied"))
-    return "Permission denied — the file is open in another program.";
-  if (r.includes("unicodedecodeerror") || r.includes("codec can"))
-    return "This file contains characters the converter couldn't read. Try saving it as UTF-8.";
-  if (r.includes("timeout") || r.includes("timed out"))
-    return "Conversion took too long and was stopped. Try a smaller file.";
+  if (r.includes("file not found") || r.includes("no such file")) return t("error.fileNotFound");
+  if (r.includes("missingdependency")) return t("error.unsupportedType");
+  if (r.includes("tesseract not found")) return t("error.tesseractMissing");
+  if (r.includes("pdf ocr requires pymupdf") || r.includes("no module named 'pymupdf'")) return t("error.pymupdfMissing");
+  if (r.includes("failed to open") || r.includes("could not open pdf")) return t("error.pdfOpenFailed");
+  if (r.includes("ocr failed") || r.includes("image_to_string")) return t("error.ocrFailed");
+  if (r.includes("permission") || r.includes("access is denied")) return t("error.permissionDenied");
+  if (r.includes("unicodedecodeerror") || r.includes("codec can")) return t("error.encoding");
+  if (r.includes("timeout") || r.includes("timed out")) return t("error.timeout");
   if (r.includes("unsupported format") || r.includes("no text can be extracted"))
     return raw.replace(/^ValueError:\s*/i, "").split(/[\n\r]/)[0].trim();
   if (r.includes("too large") || r.includes("maximum allowed size"))
     return raw.replace(/^ValueError:\s*/i, "").split(/[\n\r]/)[0].trim();
-  if (r.includes("path is a directory"))
-    return "That path is a folder, not a file.";
-  if (r.includes("invalid file path"))
-    return "Invalid file path.";
-  // Fallback: hide stack trace, show only first sentence
+  if (r.includes("path is a directory")) return t("error.pathIsDirectory");
+  if (r.includes("invalid file path")) return t("error.invalidPath");
   const first = raw.split(/[\n\r]/)[0].replace(/^[A-Za-z]+Error:\s*/i, "").trim();
-  return first.length > 120 ? first.slice(0, 117) + "..." : first || "Something went wrong.";
+  return first.length > 120 ? first.slice(0, 117) + "…" : first || t("error.genericShort");
 }
 
 /* ── Navigation ───────────────────────────────────────────────────────────── */
-const VIEW_META = {
-  convert:  ["Convert",  "Drop any file — Word, PDF, spreadsheet, image — to extract its text"],
-  ocr:      ["Scan to text",  "Read text from a photo, scanned image, or image-only PDF"],
-  bijoy:    ["Bangla font converter", "Convert old Bijoy / SutonnyMJ text to proper Unicode Bangla"],
-  history:  ["History",  "Your recent conversions"],
-  settings: ["Settings", "Appearance & smart-conversion options"],
+const VIEW_KEYS = {
+  convert:  ["convert.title",  "convert.sub"],
+  ocr:      ["ocr.title",      "ocr.sub"],
+  bijoy:    ["bijoy.title",    "bijoy.sub"],
+  history:  ["history.title",  "history.sub"],
+  settings: ["settings.title", "settings.sub"],
 };
+let currentView = "convert";
 function wireNav() {
   document.querySelectorAll(".nav-btn").forEach(btn => {
     btn.addEventListener("click", () => switchView(btn.dataset.view));
   });
 }
 function switchView(v) {
+  currentView = v;
   document.querySelectorAll(".nav-btn").forEach(b => b.classList.toggle("active", b.dataset.view === v));
   document.querySelectorAll(".view").forEach(s => s.classList.remove("active"));
   const sec = $("view-" + v); sec.classList.add("active"); sec.classList.add("fade-in");
   setTimeout(() => sec.classList.remove("fade-in"), 300);
-  $("view-title").textContent = VIEW_META[v][0];
-  $("view-sub").textContent = VIEW_META[v][1];
+  $("view-title").textContent = t(VIEW_KEYS[v][0]);
+  $("view-sub").textContent = t(VIEW_KEYS[v][1]);
   if (v === "history") renderHistory();
 }
 
@@ -150,9 +194,21 @@ function wireMode() {
   window.matchMedia("(prefers-color-scheme: dark)")
     .addEventListener("change", () => { if (cfg.theme === "System") applyTheme(); });
 }
+function wireLang() {
+  document.querySelectorAll("#lang-seg button").forEach(b =>
+    b.addEventListener("click", () => {
+      if (b.dataset.lang === lang) return;
+      lang = b.dataset.lang; save({ language: lang }); applyLang();
+      $("view-title").textContent = t(VIEW_KEYS[currentView][0]);
+      $("view-sub").textContent = t(VIEW_KEYS[currentView][1]);
+    }));
+}
 function wirePalette() {
-  document.querySelectorAll(".palette-card").forEach(c =>
-    c.addEventListener("click", () => { save({ palette: c.dataset.palette }); applyPalette(); }));
+  document.querySelectorAll(".palette-card").forEach(c => {
+    const choose = () => { save({ palette: c.dataset.palette }); applyPalette(); };
+    c.addEventListener("click", choose);
+    c.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); choose(); } });
+  });
 }
 
 /* ── Convert view ─────────────────────────────────────────────────────────── */
@@ -168,29 +224,21 @@ function wireConvert() {
   document.querySelectorAll("#out-tabs button").forEach(b =>
     b.addEventListener("click", () => setOutMode(b.dataset.tab)));
   $("editor").addEventListener("input", () => {
-    if (selected >= 0) files[selected].text = $("editor").value;
+    if (selected >= 0) { files[selected].text = $("editor").value; updateWordCount(files[selected].text); }
   });
-  // keyboard shortcuts
   document.addEventListener("keydown", (e) => {
-    const activeView = document.querySelector(".view.active");
-    const isConvert = activeView && activeView.id === "view-convert";
-    if ((e.ctrlKey || e.metaKey) && e.key === "o" && !e.shiftKey) {
-      if (isConvert) { e.preventDefault(); addFiles(); }
-    }
-    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
-      if (isConvert) { e.preventDefault(); convertAll(); }
-    }
+    const isConvert = currentView === "convert";
+    if ((e.ctrlKey || e.metaKey) && e.key === "o" && !e.shiftKey) { if (isConvert) { e.preventDefault(); addFiles(); } }
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { if (isConvert) { e.preventDefault(); convertAll(); } }
   });
 }
 async function addFiles() {
-  try {
-    const picked = await api().pick_files();
-    addMetas(picked);
-  } catch (e) { toast("Could not open file picker", "err"); }
+  try { addMetas(await api().pick_files()); }
+  catch (e) { toast(t("toast.pickerFailed"), "err"); }
 }
 async function onFilesDropped(paths) {
   try { addMetas(await api().add_dropped(paths)); }
-  catch (e) { toast("Drop failed — click to browse instead", "err"); }
+  catch (e) { toast(t("toast.dropFailed"), "err"); }
 }
 function addMetas(metas) {
   let added = 0;
@@ -200,17 +248,17 @@ function addMetas(metas) {
       added++;
     }
   });
-  if (added) { renderFiles(); }
+  if (added) renderFiles();
 }
 function clearFiles() { files = []; selected = -1; renderFiles(); renderOutput(); }
 
 async function convertAll() {
   const todo = files.filter(f => f.status === "pending" || f.status === "error");
-  if (!todo.length) return toast("Nothing to convert", "err");
+  if (!todo.length) return toast(t("toast.nothingToConvert"), "err");
   const btn = $("convert-btn");
-  btn.disabled = true;
+  btn.disabled = true; btn.setAttribute("aria-busy", "true");
   let doneCount = 0;
-  btn.textContent = "Converting 0 / " + todo.length + "…";
+  btn.textContent = t("convert.converting", { done: 0, total: todo.length });
   for (const f of files) {
     if (f.status !== "pending" && f.status !== "error") continue;
     f.status = "doing"; f.error = ""; renderFiles();
@@ -222,32 +270,24 @@ async function convertAll() {
       f.status = "error"; f.error = friendlyError(res.error);
     }
     doneCount++;
-    btn.textContent = "Converting " + doneCount + " / " + todo.length + "…";
+    btn.textContent = t("convert.converting", { done: doneCount, total: todo.length });
     renderFiles();
     if (selected === files.indexOf(f) || selected < 0) selectFile(files.indexOf(f));
   }
-  btn.disabled = false;
-  btn.innerHTML = '<i class="ti ti-bolt"></i>Convert all';
+  btn.disabled = false; btn.removeAttribute("aria-busy");
+  btn.innerHTML = '<i class="ti ti-bolt"></i><span>' + esc(t("btn.convertAll")) + '</span>';
   const ok   = files.filter(f => f.status === "done").length;
   const warn = files.filter(f => f.status === "warn").length;
   const err  = files.filter(f => f.status === "error").length;
   const parts = [];
-  if (ok)   parts.push(`${ok} converted`);
-  if (warn) parts.push(`${warn} empty`);
-  if (err)  parts.push(`${err} failed`);
+  if (ok)   parts.push(t("convert.result.converted", { count: ok }));
+  if (warn) parts.push(t("convert.result.empty", { count: warn }));
+  if (err)  parts.push(t("convert.result.failed", { count: err }));
   toast(parts.join(", "), err ? "err" : warn ? "warn" : "ok");
 }
 function retryFailed() { convertAll(); }
 
-const STEP_LABEL = {
-  markitdown: "MarkItDown", ocr: "OCR", bijoy: "Bijoy→Unicode",
-  doc_ole: "Legacy Word (.doc)", pdf_ocr: "PDF OCR",
-  ocr_empty: "No text found", doc_empty: "No text in doc",
-  pdf_empty: "No text in PDF", image_ocr_disabled: "OCR disabled",
-  rtf: "RTF extract",
-  xlsx_direct: "Excel (direct read)", xlsx_empty: "No text in spreadsheet",
-  plaintext: "Plain text", plaintext_empty: "No text",
-};
+function stepLabel(s) { return t("step." + s); }
 const EMPTY_STEPS = new Set(["ocr_empty", "doc_empty", "pdf_empty", "image_ocr_disabled", "xlsx_empty", "plaintext_empty"]);
 const STAT_ICON = {
   pending: "ti-circle", doing: "ti-loader-2",
@@ -258,7 +298,7 @@ function renderFiles() {
   $("retry-btn").disabled = !files.some(f => f.status === "error");
   const list = $("file-list");
   if (!files.length) {
-    list.innerHTML = '<div class="empty"><i class="ti ti-files-off"></i>No files yet</div>';
+    list.innerHTML = '<div class="empty"><i class="ti ti-files-off" aria-hidden="true"></i><span>' + esc(t("convert.empty")) + '</span></div>';
     return;
   }
   list.innerHTML = "";
@@ -266,20 +306,20 @@ function renderFiles() {
     const row = document.createElement("div");
     row.className = "file-row" + (i === selected ? " selected" : "");
     row.draggable = true;
+    const kind = f.is_image ? t("convert.fileType.image") : t("convert.fileType.document");
     const sizeStr = f.size ? " · " + formatBytes(f.size) : "";
-    const stepsText = f.status === "pending"
-      ? (f.is_image ? "image" : "document") + sizeStr
-      : (f.steps.length ? f.steps.map(s => STEP_LABEL[s] || s).join(" · ") : (f.error || (f.is_image ? "image" : "document")));
-    const steps = stepsText;
+    const steps = f.status === "pending"
+      ? kind + sizeStr
+      : (f.steps.length ? f.steps.map(stepLabel).join(" · ") : (f.error || kind));
     row.innerHTML =
       `<div class="ficon"><i class="ti ${f.is_image ? "ti-photo" : "ti-file-text"}"></i></div>
        <div class="fmeta"><div class="fname">${esc(f.name)}</div>
          <div class="fsteps">${esc(steps)}</div>
-         ${f.status === "doing" ? '<div class="progress-track"><div class="progress-bar" style="width:65%"></div></div>' : ""}
+         ${f.status === "doing" ? '<div class="progress-track" role="progressbar"><div class="progress-bar" style="width:65%"></div></div>' : ""}
        </div>
-       <i class="ti ${STAT_ICON[f.status]} fstat ${f.status}"></i>
-       <i class="ti ti-x fx" data-x="${i}"></i>`;
-    row.addEventListener("click", (e) => { if (!e.target.dataset.x) selectFile(i); });
+       <i class="ti ${STAT_ICON[f.status]} fstat ${f.status}" aria-hidden="true"></i>
+       <button class="fx" data-x="${i}" aria-label="Remove"><i class="ti ti-x"></i></button>`;
+    row.addEventListener("click", (e) => { if (!e.target.closest(".fx")) selectFile(i); });
     row.querySelector(".fx").addEventListener("click", () => removeFile(i));
     setupRowDrag(row, i);
     list.appendChild(row);
@@ -315,49 +355,46 @@ function setOutMode(m) {
   document.querySelectorAll("#out-tabs button").forEach(b => b.classList.toggle("active", b.dataset.tab === m));
   renderOutput();
 }
+function updateWordCount(text) {
+  const wc = $("word-count");
+  if (!wc) return;
+  if (!text) { wc.textContent = ""; return; }
+  const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+  wc.textContent = t("count.words", { words: words, chars: text.length });
+}
 function renderOutput() {
   const ed = $("editor"), pv = $("preview");
   const f = selected >= 0 ? files[selected] : null;
-  $("out-name").textContent = f ? f.name : "Output";
+  $("out-name").textContent = f ? f.name : t("convert.output.title");
   const text = f ? (f.text || "") : "";
   if (outMode === "edit") {
     ed.style.display = "block"; pv.style.display = "none"; ed.value = text;
   } else {
     ed.style.display = "none"; pv.style.display = "block";
-    pv.innerHTML = text ? marked.parse(text) : '<div class="empty"><i class="ti ti-file-text"></i>Select a converted file</div>';
+    pv.innerHTML = text ? marked.parse(text)
+      : '<div class="empty"><i class="ti ti-file-text" aria-hidden="true"></i><span>' + esc(t("preview.selectFile")) + '</span></div>';
     pv.classList.toggle("bn", /[ঀ-৿]/.test(text));
   }
-  // word / char count badge
-  const words = text.trim() ? text.trim().split(/\s+/).length : 0;
-  const chars = text.length;
-  let wc = document.getElementById("word-count");
-  if (!wc) {
-    wc = document.createElement("span");
-    wc.id = "word-count";
-    wc.style.cssText = "font-size:11px;color:var(--text-faint);margin-left:auto;padding-right:4px;";
-    const foot = document.querySelector("#view-convert .panel:last-child .panel-foot");
-    if (foot) foot.appendChild(wc);
-  }
-  wc.textContent = text ? words + " words · " + chars + " chars" : "";
+  updateWordCount(text);
 }
 async function exportCurrent() {
   const f = selected >= 0 ? files[selected] : null;
-  if (!f || !f.text) return toast("Nothing to export", "err");
+  if (!f || !f.text) return toast(t("toast.nothingToExport"), "err");
   const fmt = await pickFormat();
   if (!fmt) return;
   const base = f.name.replace(/\.[^.]+$/, "");
   const res = await api().export_text(f.text, fmt, `${base}.${fmt}`);
-  if (res.ok) toast("Saved " + res.path.split(/[\\/]/).pop(), "ok");
-  else if (!res.cancelled) toast(res.error || "Export failed", "err");
+  if (res.ok) toast(t("toast.saved", { name: res.path.split(/[\\/]/).pop() }), "ok");
+  else if (!res.cancelled) toast(res.error || t("toast.exportFailed"), "err");
 }
 async function exportAll() {
   const done = files.filter(f => f.status === "done" && f.text);
-  if (!done.length) return toast("No converted files", "err");
+  if (!done.length) return toast(t("toast.noConvertedFiles"), "err");
   const fmt = await pickFormat();
   if (!fmt) return;
   const res = await api().export_combined(done.map(f => ({ name: f.name, text: f.text })), fmt);
-  if (res.ok) toast("Saved combined." + fmt, "ok");
-  else if (!res.cancelled) toast(res.error || "Export failed", "err");
+  if (res.ok) toast(t("toast.savedCombined", { format: fmt }), "ok");
+  else if (!res.cancelled) toast(res.error || t("toast.exportFailed"), "err");
 }
 
 /* ── Scan (OCR) view ──────────────────────────────────────────────────────── */
@@ -373,22 +410,24 @@ function wireOcr() {
   $("ocr-export").addEventListener("click", () => saveText($("ocr-out").value, "scanned.txt"));
 }
 async function pickOcr() {
-  try {
-    const m = await api().pick_scan_file();
-    if (m && m.path) setOcr(m);
-  } catch (e) {}
+  try { const m = await api().pick_scan_file(); if (m && m.path) setOcr(m); }
+  catch (e) {}
 }
 function setOcr(m) {
-  ocrPath = m.path;
-  const isPdf = m.is_pdf || (m.path || "").toLowerCase().endsWith(".pdf");
-  $("ocr-file").textContent = m.name + (isPdf ? " (PDF - will scan each page)" : "");
+  ocrPath = m.path; ocrName = m.name;
+  refreshOcrLabel();
+}
+function refreshOcrLabel() {
+  if (!ocrPath) return;  // keeps the data-i18n formats line when nothing chosen
+  const isPdf = (ocrPath || "").toLowerCase().endsWith(".pdf");
+  $("ocr-file").textContent = ocrName + (isPdf ? " " + t("ocr.pdfSuffix") : "");
 }
 async function runOcr() {
-  if (!ocrPath) return toast("Choose an image or PDF first", "err");
-  const lang = document.querySelector("#ocr-lang button.active").dataset.lang;
+  if (!ocrPath) return toast(t("toast.chooseScanFile"), "err");
+  const lang2 = document.querySelector("#ocr-lang button.active").dataset.lang;
   const isPdf = (ocrPath || "").toLowerCase().endsWith(".pdf");
-  $("ocr-out").value = isPdf ? "Scanning PDF pages… this may take a moment." : "Extracting text…";
-  const res = await api().ocr(ocrPath, lang, $("ocr-bijoy").checked);
+  $("ocr-out").value = isPdf ? t("ocr.scanningPdf") : t("ocr.extracting");
+  const res = await api().ocr(ocrPath, lang2, $("ocr-bijoy").checked);
   $("ocr-out").value = res.ok ? res.text : friendlyError(res.error);
 }
 
@@ -400,22 +439,30 @@ function wireBijoy() {
   $("bj-export").addEventListener("click", () => saveText($("bj-out").value, "unicode.txt"));
 }
 let detectTimer = null;
+let lastDetect = "idle";   // idle | bijoy | unicode_bn | latin | other
+function setDetectPill(state) {
+  lastDetect = state;
+  const pill = $("bj-detect");
+  if (state === "idle") { pill.className = "detect-pill"; pill.textContent = t("bijoy.detect.idle"); return; }
+  const key = { bijoy: "bijoy.detect.bijoy", unicode_bn: "bijoy.detect.unicode",
+                latin: "bijoy.detect.latin", other: "bijoy.detect.other" }[state] || "bijoy.detect.other";
+  pill.className = "detect-pill " + state;
+  pill.textContent = t(key);
+}
+function refreshDetectPill() { setDetectPill(($("bj-in") && $("bj-in").value.trim()) ? lastDetect : "idle"); }
 function detectBijoy() {
   clearTimeout(detectTimer);
   detectTimer = setTimeout(async () => {
-    const t = $("bj-in").value.trim();
-    const pill = $("bj-detect");
-    if (!t) { pill.className = "detect-pill"; pill.textContent = "Type to auto-detect"; return; }
-    const s = await api().detect(t);
-    const map = { bijoy: "Bijoy detected", unicode_bn: "Already Unicode", latin: "Latin / English", other: "Unrecognised" };
-    pill.className = "detect-pill " + s;
-    pill.textContent = map[s] || "Unrecognised";
+    const txt = $("bj-in").value.trim();
+    if (!txt) return setDetectPill("idle");
+    const s = await api().detect(txt);
+    setDetectPill(s || "other");
   }, 250);
 }
 async function runBijoy() {
-  const t = $("bj-in").value.trim();
-  if (!t) return;
-  const res = await api().bijoy_convert(t);
+  const txt = $("bj-in").value.trim();
+  if (!txt) return;
+  const res = await api().bijoy_convert(txt);
   $("bj-out").value = res.text;
 }
 
@@ -425,13 +472,15 @@ function wireHistory() {
 }
 async function renderHistory() {
   const items = await api().get_history();
-  $("hist-count").textContent = items.length ? `${items.length} conversion${items.length > 1 ? "s" : ""}` : "No conversions yet";
+  $("hist-count").textContent = items.length
+    ? t(items.length === 1 ? "history.count.one" : "history.count.many", { count: items.length })
+    : t("history.count.none");
   $("hist-list").innerHTML = items.map(h => {
-    const steps = (h.steps || []).map(s => `<span class="badge">${STEP_LABEL[s] || s}</span>`).join("");
+    const steps = (h.steps || []).map(s => `<span class="badge">${esc(stepLabel(s))}</span>`).join("");
     return `<div class="hist-item">
       <div class="hicon ${h.ok ? "ok" : "err"}"><i class="ti ${h.ok ? "ti-check" : "ti-x"}"></i></div>
       <div class="hmeta"><div class="hname">${esc(h.name)}</div>
-        <div class="hsub">${esc(h.ts || "")} ${h.ok ? steps : esc(h.error || "failed")}</div></div>
+        <div class="hsub">${esc(h.ts || "")} ${h.ok ? steps : esc(h.error || t("history.failed"))}</div></div>
     </div>`;
   }).join("");
 }
@@ -452,15 +501,17 @@ function syncSettingsControls() {
 
 /* ── Shared helpers ───────────────────────────────────────────────────────── */
 function segPick(sel, btn) {
-  document.querySelectorAll(sel + " button").forEach(b => b.classList.remove("active"));
-  btn.classList.add("active");
+  document.querySelectorAll(sel + " button").forEach(b => {
+    b.classList.remove("active"); b.setAttribute("aria-checked", "false");
+  });
+  btn.classList.add("active"); btn.setAttribute("aria-checked", "true");
 }
 async function pickFormat() {
   return new Promise(resolve => {
     const wrap = document.createElement("div");
-    wrap.style.cssText = "position:absolute;inset:0;background:var(--overlay);display:flex;align-items:center;justify-content:center;z-index:60;";
-    wrap.innerHTML = `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;box-shadow:var(--shadow);min-width:260px;">
-      <div style="font-size:14px;font-weight:600;margin-bottom:14px;">Export format</div>
+    wrap.className = "modal-backdrop";
+    wrap.innerHTML = `<div class="modal-card">
+      <div class="modal-title">${esc(t("export.title"))}</div>
       <div class="row" style="gap:8px;">
         ${["md", "html", "txt"].map(f => `<button class="btn" data-f="${f}" style="flex:1;justify-content:center;">${f.toUpperCase()}</button>`).join("")}
       </div></div>`;
@@ -471,16 +522,16 @@ async function pickFormat() {
     });
   });
 }
-async function copyText(t) {
-  if (!t) return toast("Nothing to copy", "err");
-  try { await navigator.clipboard.writeText(t); toast("Copied to clipboard", "ok"); }
-  catch (e) { toast("Copy failed", "err"); }
+async function copyText(txt) {
+  if (!txt) return toast(t("toast.nothingToCopy"), "err");
+  try { await navigator.clipboard.writeText(txt); toast(t("toast.copied"), "ok"); }
+  catch (e) { toast(t("toast.copyFailed"), "err"); }
 }
-async function saveText(t, name) {
-  if (!t) return toast("Nothing to save", "err");
-  const res = await api().export_text(t, "txt", name);
-  if (res.ok) toast("Saved " + res.path.split(/[\\/]/).pop(), "ok");
-  else if (!res.cancelled) toast(res.error || "Save failed", "err");
+async function saveText(txt, name) {
+  if (!txt) return toast(t("toast.nothingToSave"), "err");
+  const res = await api().export_text(txt, "txt", name);
+  if (res.ok) toast(t("toast.saved", { name: res.path.split(/[\\/]/).pop() }), "ok");
+  else if (!res.cancelled) toast(res.error || t("toast.saveFailed"), "err");
 }
 function setupDrop(el, onClick, onPaths) {
   el.addEventListener("dragover", e => { e.preventDefault(); el.classList.add("drag"); });
@@ -493,18 +544,19 @@ function setupDrop(el, onClick, onPaths) {
       if (p) paths.push(p);
     }
     if (paths.length) onPaths(paths);
-    else toast("Drag-drop unavailable — click to browse", "err");
+    else toast(t("toast.dropUnavailable"), "err");
   });
 }
 function esc(s) {
   return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 }
 function toast(msg, kind) {
-  const t = document.createElement("div");
-  t.className = "toast " + (kind || "");
-  t.innerHTML = `<i class="ti ${kind === "ok" ? "ti-check" : kind === "err" ? "ti-alert-circle" : kind === "warn" ? "ti-alert-triangle" : "ti-info-circle"}"></i>${esc(msg)}`;
-  $("toasts").appendChild(t);
-  setTimeout(() => { t.style.opacity = "0"; setTimeout(() => t.remove(), 300); }, 2600);
+  const el = document.createElement("div");
+  el.className = "toast " + (kind || "");
+  el.setAttribute("role", kind === "err" ? "alert" : "status");
+  el.innerHTML = `<i class="ti ${kind === "ok" ? "ti-check" : kind === "err" ? "ti-alert-circle" : kind === "warn" ? "ti-alert-triangle" : "ti-info-circle"}"></i>${esc(msg)}`;
+  $("toasts").appendChild(el);
+  setTimeout(() => { el.style.opacity = "0"; setTimeout(() => el.remove(), 300); }, 2600);
 }
 function formatBytes(b) {
   if (b < 1024) return b + " B";

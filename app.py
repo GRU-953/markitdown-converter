@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Aninda Sundar Howlader (GRU-953)
+# SPDX-License-Identifier: Apache-2.0
 """
 GRU953 Markdown — GRU953
 pywebview desktop app: Python backend + HTML/CSS/JS frontend (WebView2).
@@ -34,7 +36,7 @@ from bijoy_unicode import convert_bijoy_to_unicode, detect_script
 from ocr_engine import ocr_image, ocr_pdf, tesseract_available, pymupdf_available
 from pipeline import convert_file, is_image, is_pdf, is_legacy_doc
 
-APP_VERSION = "v4.7.0"
+APP_VERSION = "v4.8.0"
 MAX_FILE_BYTES = 200 * 1024 * 1024  # 200 MB hard limit
 _RELEASES_API = "https://api.github.com/repos/GRU-953/gru953-markdown/releases/latest"
 
@@ -85,6 +87,22 @@ class Api:
 
     def get_config(self) -> dict:
         return self._cfg
+
+    def get_locales(self) -> dict:
+        """Return the bilingual UI string catalogues as {"en": {...}, "bn": {...}}.
+
+        Read from the bundled ``locales/`` directory so the frontend can switch
+        languages instantly with no further round-trips. Best-effort: a missing
+        or unreadable file yields an empty dict so the UI falls back to its keys.
+        """
+        out = {}
+        for code in ("en", "bn"):
+            try:
+                p = _resource(f"locales/{code}.json")
+                out[code] = _json.loads(p.read_text(encoding="utf-8"))
+            except Exception:
+                out[code] = {}
+        return out
 
     def save_config(self, patch: dict) -> dict:
         if isinstance(patch, dict):

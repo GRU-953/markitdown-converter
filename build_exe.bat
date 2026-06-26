@@ -18,6 +18,7 @@ python -m PyInstaller --noconfirm --onefile --windowed ^
   --icon "assets/app_icon.ico" ^
   --add-data "web;web" ^
   --add-data "assets;assets" ^
+  --add-data "locales;locales" ^
   --add-binary "%TESS%\tesseract.exe;tesseract" ^
   --add-data "%TESS%\tessdata\eng.traineddata;tesseract/tessdata" ^
   --add-data "%TESS%\tessdata\ben.traineddata;tesseract/tessdata" ^
@@ -35,6 +36,7 @@ python -m PyInstaller --noconfirm --onefile --windowed ^
   --hidden-import xlrd ^
   --hidden-import pdfminer ^
   --hidden-import olefile ^
+  --hidden-import striprtf ^
   app.py
 
 echo [4/4] Done.

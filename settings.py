@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Aninda Sundar Howlader (GRU-953)
+# SPDX-License-Identifier: Apache-2.0
 """
 Persistent user settings — stored as JSON in the user's home directory.
 All I/O is best-effort: exceptions are silenced so a bad settings file
@@ -14,6 +16,7 @@ _MAX_HISTORY = 100
 _DEFAULTS: dict = {
     "theme": "System",          # Light | Dark | System
     "palette": "indigo",        # indigo (Teal) | violet (Indigo) | slate (Amber)
+    "language": "en",           # UI language: en | bn
     "ocr_language": "English",
     "auto_ocr": True,
     "auto_bijoy": True,

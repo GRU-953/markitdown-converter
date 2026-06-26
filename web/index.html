@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-mode="dark" data-palette="indigo">
+<html lang="en" data-mode="dark" data-palette="indigo" data-lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -14,42 +14,61 @@
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
+  <!-- Shared brand assets: the Soaring Bird mark + Open Spectrum gradient, defined once -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <linearGradient id="brandgrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#3A4A9E"/><stop offset="38%" stop-color="#14A88A"/>
+        <stop offset="72%" stop-color="#F4B53C"/><stop offset="100%" stop-color="#E15B3C"/>
+      </linearGradient>
+      <symbol id="bird" viewBox="0 0 1024 1024"><path d="M537.119751,803.211670 C461.706360,836.001831 387.125061,869.755432 311.224304,901.043823 C363.779114,829.261292 419.384155,760.062927 474.698425,690.932251 C473.236450,688.153809 471.006989,687.631714 469.119812,686.715454 C426.562500,666.052124 384.075806,645.240540 341.393524,624.838257 C301.779877,605.902832 277.684875,574.019653 263.707642,533.432434 C259.798248,522.080200 256.836853,510.453461 254.730850,498.651428 C253.889084,493.934265 251.900620,490.482391 248.326782,487.348633 C232.131699,473.147614 216.633896,458.292297 205.231964,439.716980 C192.237778,418.547638 184.287582,395.591125 180.709610,371.088257 C179.797379,364.840973 179.310394,358.526093 178.803543,352.228149 C178.632751,350.106018 178.047806,348.386658 176.487808,346.924194 C145.440323,317.817230 128.537994,281.074219 119.004219,240.359421 C115.440422,225.139908 111.879768,209.919647 108.329567,194.696945 C108.149155,193.923340 108.081734,193.123367 107.965446,192.360245 C110.021599,191.077911 111.329643,192.564896 112.677315,193.278748 C207.929932,243.732620 302.735382,295.018585 397.510315,346.361603 C422.259644,359.769196 447.187164,372.849213 471.885010,386.350128 C511.046387,407.757477 550.365479,428.901123 589.060974,451.126068 C610.338562,463.346924 629.978088,478.622742 645.669800,497.448761 C669.853577,526.463013 684.255249,560.204163 687.510254,598.315430 C688.535278,610.316711 688.314331,622.273193 688.081665,634.262573 C688.034546,636.689636 687.370789,639.197021 688.743713,641.881714 C691.309021,640.883545 692.527161,638.703125 693.896118,636.729370 C705.477295,620.031433 716.691589,603.062561 728.780701,586.741455 C733.494019,580.378296 733.874573,574.871826 731.105591,567.924500 C723.517273,548.885559 710.802429,534.060669 694.527832,522.030334 C689.974915,518.664734 685.216553,515.577759 680.647278,512.233398 C664.647827,500.522827 654.146484,483.935120 641.346436,468.632874 C648.446533,463.732666 655.764343,460.563477 662.876404,457.115082 C685.502930,446.144318 708.005249,434.895905 731.087952,424.898407 C745.470581,418.669037 760.161682,413.492706 775.887085,411.481262 C790.182434,409.652710 803.431030,412.443451 815.855896,419.244843 C820.589233,421.835846 825.262817,422.924927 830.588074,422.753021 C844.180664,422.314331 857.519531,423.583649 870.023804,429.656342 C873.903503,431.540497 876.940918,434.100006 879.110107,437.867493 C887.090393,451.727997 895.151489,465.542145 903.230652,479.345337 C904.912903,482.219360 904.583557,483.671814 901.006165,484.545624 C886.455872,488.099792 871.871765,491.572754 857.476257,495.691193 C831.027100,503.258087 811.878479,520.579895 796.730469,542.781494 C778.421448,569.616089 760.568604,596.763977 742.096680,623.484863 C720.877625,654.179749 699.689575,684.928711 676.142944,713.916565 C665.128662,727.476013 653.761169,740.747803 640.640625,752.468201 C629.125977,762.754150 615.894897,769.895142 601.908264,775.873840 C580.471680,785.037170 558.954956,794.013062 537.119751,803.211670 M464.101471,461.487976 C478.598236,519.392639 493.095001,577.297302 507.591766,635.202026 C508.203888,635.222839 508.816040,635.243652 509.428192,635.264465 C513.250183,628.696716 516.757019,621.920166 520.945923,615.595398 C545.763794,578.123718 569.492676,539.883240 598.360779,505.247375 C602.132874,500.721649 601.872803,499.221222 597.169617,495.409363 C589.137451,488.899353 580.699524,482.941345 571.804626,477.675415 C534.830200,455.786255 496.788757,435.811676 459.184998,415.051758 C457.821655,414.299072 456.330963,412.802185 454.685547,414.396118 C453.070801,415.960297 453.202179,418.015778 453.701660,420.020905 C457.080353,433.583923 460.477020,447.142517 464.101471,461.487976 M247.166962,358.258209 C307.242432,389.791962 367.317932,421.325714 427.321747,452.821808 C429.040161,450.623291 428.579956,448.873413 428.118835,447.072144 C424.738098,433.866425 420.499878,420.800018 418.278870,407.400116 C416.067230,394.056396 409.635406,385.354309 397.003082,381.022614 C396.848175,380.969482 396.712280,380.861755 396.566376,380.781464 C317.500122,337.283417 237.994736,294.599152 158.308823,252.249863 C157.234833,251.679077 156.181519,250.484512 154.731247,251.453491 C154.673615,251.827682 154.512207,252.177200 154.591705,252.458679 C163.898575,285.411011 180.540527,313.604340 208.088562,334.681488 C220.043381,343.828217 233.354568,350.749237 247.166962,358.258209 M246.092957,392.456268 C235.452454,386.782959 224.811951,381.109680 214.212830,375.458466 C212.869736,377.518402 213.408737,378.966125 213.763412,380.402893 C220.334351,407.021240 232.676453,430.407501 252.413010,449.697540 C267.416748,464.361908 285.500244,474.067352 304.237671,483.014801 C352.461090,506.042419 400.481934,529.494202 448.593140,552.756958 C450.186676,553.527466 451.922791,555.002930 453.672638,553.628845 C455.450500,552.232727 454.370361,550.238525 453.920868,548.515503 C449.930817,533.219177 445.614136,517.999084 442.058807,502.602905 C440.683777,496.648407 437.741089,493.196747 432.460358,490.432495 C370.498016,457.997620 308.630707,425.381287 246.092957,392.456268 M481.448212,653.649658 C476.853638,635.940735 472.274719,618.227661 467.647003,600.527405 C466.981659,597.982605 466.421051,595.457214 463.509277,594.123291 C456.554962,590.937439 449.740814,587.447205 442.840881,584.140747 C405.903381,566.440308 368.951416,548.770020 332.016632,531.063904 C320.006348,525.306335 308.043304,519.450073 296.028107,513.702881 C294.634705,513.036316 293.102814,511.670074 291.476410,513.295654 C290.159241,514.612061 290.923737,516.153076 291.308777,517.539917 C292.110016,520.425537 292.959717,523.307617 293.986450,526.119202 C304.810608,555.760010 322.162720,580.184631 350.936096,594.742126 C378.122162,608.496521 405.668793,621.538635 433.066650,634.873962 C447.288757,641.796143 461.516479,648.707275 475.783051,655.536926 C477.804260,656.504578 480.416351,658.722168 481.448212,653.649658 M532.150696,659.604797 C531.399597,661.090088 530.745361,662.634399 529.882080,664.051331 C523.046021,675.271362 528.059082,681.428284 537.109253,686.291504 C541.652954,688.732971 546.330017,690.925964 550.940796,693.243286 C572.059814,703.857788 593.182190,714.465759 614.287659,725.107300 C617.062927,726.506653 619.676636,727.907898 622.304626,724.800842 C628.973877,716.915955 635.901001,709.163879 640.014038,699.555603 C644.484680,689.111938 645.663513,673.974976 632.512634,664.575500 C626.055969,659.960571 620.399780,654.156738 614.697571,648.568359 C598.612854,632.804871 582.991455,616.645996 573.989624,595.436340 C573.662903,594.666504 573.194031,593.962097 571.253723,594.017578 C557.983643,615.048950 544.427429,636.505310 532.150696,659.604797 M746.825562,451.379089 C726.907227,460.325195 707.206421,469.711060 686.751892,480.148560 C717.035278,495.086273 739.227234,516.978638 755.889343,544.367188 C758.297729,543.335999 759.052734,541.804199 760.029724,540.476440 C766.639648,531.494019 773.094116,522.391479 779.905945,513.564758 C795.090027,493.889221 813.904663,479.044586 837.537292,470.589172 C845.156372,467.863220 853.087524,466.293701 862.560486,463.625366 C860.462402,462.297791 859.390747,461.782715 858.512695,461.039093 C848.647217,452.684174 837.151367,450.325256 824.814453,452.756195 C817.397583,454.217621 811.354614,454.013306 805.248535,448.413727 C797.841064,441.620728 788.476318,439.476288 778.282104,441.136902 C767.490173,442.894897 757.442261,446.730835 746.825562,451.379089 M581.077698,750.671143 C582.998108,749.588989 585.716431,749.450134 586.098694,746.585022 C585.506226,745.100830 584.231812,744.540955 583.073242,743.950439 C557.855164,731.095520 532.608398,718.296875 507.411652,705.400391 C504.358429,703.837708 502.499054,704.889465 500.621765,707.261292 C470.240387,745.646118 439.824219,784.003357 409.443146,822.388367 C408.817993,823.178284 407.547577,823.972595 408.689728,825.435730 C413.927551,824.185059 418.538605,821.436951 423.387207,819.292419 C458.092560,803.942139 492.730530,788.438599 527.488342,773.208313 C545.006958,765.532104 562.730957,758.324524 581.077698,750.671143 M617.881042,529.375854 C614.994019,533.027710 612.041382,536.629883 609.231262,540.339966 C596.569580,557.056335 596.151611,571.073792 607.469055,588.581604 C619.576599,607.311707 636.292603,622.070740 650.559509,638.937317 C651.665161,640.244385 653.030701,641.299988 654.907471,640.609863 C656.875122,639.886353 656.773682,638.020691 656.927795,636.405029 C659.726440,607.079529 656.788208,578.635376 643.777222,551.769287 C639.566956,543.075623 635.016907,534.565613 628.997314,526.955505 C625.630005,522.698425 624.020142,522.694641 620.307617,526.583740 C619.619019,527.305115 618.984497,528.078125 617.881042,529.375854 z"/></symbol>
+    </defs>
+  </svg>
+
   <div class="app">
     <!-- Sidebar -->
     <nav class="sidebar">
       <div class="brand-mark">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="22" height="22" aria-hidden="true">
-          <path d="M14 36 L14 15 L32 27 L50 15 L50 36" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-          <line x1="32" y1="40" x2="32" y2="51" stroke="#F4B53C" stroke-width="4" stroke-linecap="round"/>
-          <path d="M25 45 L32 52 L39 45" fill="none" stroke="#F4B53C" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        <svg class="brand-logo" viewBox="0 0 64 64" width="44" height="44" role="img" aria-label="GRU953 Markdown">
+          <rect width="64" height="64" rx="15" fill="#10211D"/>
+          <use href="#bird" x="12" y="12" width="40" height="40" fill="url(#brandgrad)"/>
         </svg>
       </div>
-      <button class="nav-btn active" data-view="convert" title="Convert files"><i class="ti ti-transform"></i><span>Convert</span></button>
-      <button class="nav-btn" data-view="ocr" title="Scan image or PDF to text"><i class="ti ti-scan"></i><span>Scan</span></button>
-      <button class="nav-btn" data-view="bijoy" title="Convert old Bangla (Bijoy/SutonnyMJ) to Unicode"><i class="ti ti-language"></i><span>Bangla</span></button>
-      <button class="nav-btn" data-view="history" title="Conversion history"><i class="ti ti-history"></i><span>History</span></button>
+      <button class="nav-btn active" data-view="convert" data-i18n-title="nav.convert.tip" title="Convert files"><i class="ti ti-transform"></i><span data-i18n="nav.convert">Convert</span></button>
+      <button class="nav-btn" data-view="ocr" data-i18n-title="nav.ocr.tip" title="Scan image or PDF to text"><i class="ti ti-scan"></i><span data-i18n="nav.ocr">Scan</span></button>
+      <button class="nav-btn" data-view="bijoy" data-i18n-title="nav.bijoy.tip" title="Convert old Bangla (Bijoy/SutonnyMJ) to Unicode"><i class="ti ti-language"></i><span data-i18n="nav.bijoy">Bangla</span></button>
+      <button class="nav-btn" data-view="history" data-i18n-title="nav.history.tip" title="Conversion history"><i class="ti ti-history"></i><span data-i18n="nav.history">History</span></button>
       <div class="nav-spacer"></div>
-      <button class="nav-btn" data-view="settings" title="Settings"><i class="ti ti-settings"></i><span>Settings</span></button>
+      <button class="nav-btn" data-view="settings" data-i18n-title="nav.settings.tip" title="Settings"><i class="ti ti-settings"></i><span data-i18n="nav.settings">Settings</span></button>
     </nav>
 
     <div class="main">
       <header class="topbar">
-        <h1 id="view-title">Convert</h1>
-        <span class="sub" id="view-sub">Documents, images & spreadsheets → Markdown</span>
+        <h1 id="view-title" data-i18n="convert.title">Convert</h1>
+        <span class="sub" id="view-sub" data-i18n="convert.sub">Documents, images &amp; spreadsheets → Markdown</span>
         <div class="topbar-right">
-          <div class="seg" id="mode-seg">
-            <button data-mode="Light">Light</button>
-            <button data-mode="System">Auto</button>
-            <button data-mode="Dark">Dark</button>
+          <div class="seg" id="lang-seg" role="radiogroup" aria-label="Language / ভাষা">
+            <button data-lang="en" role="radio" aria-checked="true" data-i18n="lang.english">English</button>
+            <button data-lang="bn" role="radio" aria-checked="false" data-i18n="lang.bangla">বাংলা</button>
+          </div>
+          <div class="seg" id="mode-seg" role="radiogroup" aria-label="Appearance mode">
+            <button data-mode="Light" role="radio" data-i18n="mode.light">Light</button>
+            <button data-mode="System" role="radio" data-i18n="mode.auto">Auto</button>
+            <button data-mode="Dark" role="radio" data-i18n="mode.dark">Dark</button>
           </div>
         </div>
       </header>
 
+      <div id="offline-banner" class="offline-banner" style="display:none" role="status">
+        <i class="ti ti-wifi-off"></i>
+        <span data-i18n="offline.message">You are offline. Local conversion still works.</span>
+      </div>
+
       <div id="update-banner" class="update-banner" style="display:none">
         <i class="ti ti-arrow-up-circle"></i>
-        <span id="update-msg">A new version is available.</span>
-        <a id="update-link" href="#" target="_blank" class="update-link">Download</a>
-        <button class="update-dismiss" onclick="this.parentElement.style.display='none'" title="Dismiss">×</button>
+        <span id="update-msg" data-i18n="update.message">A new version is available.</span>
+        <a id="update-link" href="#" target="_blank" class="update-link" data-i18n="update.download">Download</a>
+        <button class="update-dismiss" data-i18n-title="update.dismiss" onclick="this.parentElement.style.display='none'" title="Dismiss" aria-label="Dismiss">×</button>
       </div>
 
       <div class="content">
@@ -59,43 +78,44 @@
           <div class="convert-grid">
             <div class="panel">
               <div class="panel-head">
-                <h2>Files</h2><span class="count" id="file-count">0</span>
+                <h2 data-i18n="convert.files.title">Files</h2><span class="count" id="file-count">0</span>
                 <div class="head-actions">
-                  <button class="btn ghost icon" id="retry-btn" title="Retry failed" disabled><i class="ti ti-refresh"></i></button>
+                  <button class="btn ghost icon" id="retry-btn" data-i18n-title="convert.retry.tip" title="Retry failed" aria-label="Retry failed" disabled><i class="ti ti-refresh"></i></button>
                 </div>
               </div>
-              <div class="dropzone" id="dropzone">
-                <i class="ti ti-cloud-upload"></i>
-                Drop files here, or click to browse
-                <div class="small">PDF · DOCX · XLSX · PPTX · images · CSV · JSON · ZIP</div>
-              </div>
+              <button class="dropzone" id="dropzone" type="button">
+                <i class="ti ti-cloud-upload" aria-hidden="true"></i>
+                <span data-i18n="dropzone.main">Drop files here, or click to browse</span>
+                <span class="small" data-i18n="dropzone.formats">PDF · DOCX · XLSX · PPTX · images · CSV · JSON · ZIP</span>
+              </button>
               <div class="panel-body" id="file-list">
-                <div class="empty" id="file-empty"><i class="ti ti-files-off"></i>No files yet</div>
+                <div class="empty" id="file-empty"><i class="ti ti-files-off" aria-hidden="true"></i><span data-i18n="convert.empty">No files yet</span></div>
               </div>
               <div class="panel-foot">
-                <button class="btn primary" id="convert-btn"><i class="ti ti-bolt"></i>Convert all</button>
-                <button class="btn" id="clear-btn"><i class="ti ti-trash"></i></button>
+                <button class="btn primary" id="convert-btn"><i class="ti ti-bolt"></i><span data-i18n="btn.convertAll">Convert all</span></button>
+                <button class="btn icon" id="clear-btn" data-i18n-title="btn.clear" title="Clear" aria-label="Clear"><i class="ti ti-trash"></i></button>
               </div>
             </div>
 
             <div class="panel">
               <div class="panel-head">
-                <h2 id="out-name">Output</h2>
+                <h2 id="out-name" data-i18n="convert.output.title">Output</h2>
                 <div class="head-actions">
-                  <div class="seg output-tabs" id="out-tabs">
-                    <button data-tab="preview" class="active">Preview</button>
-                    <button data-tab="edit">Edit</button>
+                  <div class="seg output-tabs" id="out-tabs" role="radiogroup" aria-label="Output view">
+                    <button data-tab="preview" class="active" role="radio" data-i18n="tab.preview">Preview</button>
+                    <button data-tab="edit" role="radio" data-i18n="tab.edit">Edit</button>
                   </div>
                 </div>
               </div>
               <div class="output-body">
-                <textarea class="editor" id="editor" placeholder="Converted Markdown appears here…" style="display:none;"></textarea>
+                <textarea class="editor" id="editor" data-i18n-ph="editor.placeholder" placeholder="Converted Markdown appears here…" style="display:none;"></textarea>
                 <div class="preview" id="preview"></div>
               </div>
               <div class="panel-foot">
-                <button class="btn" id="copy-btn"><i class="ti ti-copy"></i>Copy</button>
-                <button class="btn" id="export-btn"><i class="ti ti-download"></i>Export</button>
-                <button class="btn" id="export-all-btn"><i class="ti ti-stack-2"></i>Export all</button>
+                <button class="btn" id="copy-btn"><i class="ti ti-copy"></i><span data-i18n="btn.copy">Copy</span></button>
+                <button class="btn" id="export-btn"><i class="ti ti-download"></i><span data-i18n="btn.export">Export</span></button>
+                <button class="btn" id="export-all-btn"><i class="ti ti-stack-2"></i><span data-i18n="btn.exportAll">Export all</span></button>
+                <span id="word-count" class="word-count"></span>
               </div>
             </div>
           </div>
@@ -104,24 +124,24 @@
         <!-- ── Scan (OCR) view ───────────────────────────────────────────── -->
         <section class="view" id="view-ocr">
           <div class="stack">
-            <div class="dropzone" id="ocr-drop" style="margin:0;">
-              <i class="ti ti-photo-scan"></i>Drop an image or PDF here, or click to browse
-              <div class="small" id="ocr-file">PNG · JPG · TIFF · BMP · WEBP · PDF</div>
-            </div>
+            <button class="dropzone" id="ocr-drop" type="button" style="margin:0;">
+              <i class="ti ti-photo-scan" aria-hidden="true"></i><span data-i18n="ocr.dropzone.main">Drop an image or PDF here, or click to browse</span>
+              <span class="small" id="ocr-file" data-i18n="ocr.dropzone.formats">PNG · JPG · TIFF · BMP · WEBP · PDF</span>
+            </button>
             <div class="row">
-              <span class="label">Language in the file</span>
-              <div class="seg" id="ocr-lang">
-                <button data-lang="English" class="active">English</button>
-                <button data-lang="বাংলা">বাংলা</button>
-                <button data-lang="Both">Both</button>
+              <span class="label" data-i18n="ocr.langLabel">Language in the file</span>
+              <div class="seg" id="ocr-lang" role="radiogroup" aria-label="OCR language">
+                <button data-lang="English" class="active" role="radio" data-i18n="lang.english">English</button>
+                <button data-lang="বাংলা" role="radio" data-i18n="lang.bangla">বাংলা</button>
+                <button data-lang="Both" role="radio" data-i18n="lang.both">Both</button>
               </div>
-              <label class="checkbox"><input type="checkbox" id="ocr-bijoy" checked> Convert old Bangla font → Unicode</label>
-              <button class="btn primary" id="ocr-run" style="margin-left:auto;"><i class="ti ti-scan"></i>Extract text</button>
+              <label class="checkbox"><input type="checkbox" id="ocr-bijoy" checked> <span data-i18n="ocr.bijoyCheckbox">Convert old Bangla font → Unicode</span></label>
+              <button class="btn primary" id="ocr-run" style="margin-left:auto;"><i class="ti ti-scan"></i><span data-i18n="ocr.run">Extract text</span></button>
             </div>
-            <textarea class="field" id="ocr-out" placeholder="Extracted text will appear here…"></textarea>
+            <textarea class="field" id="ocr-out" data-i18n-ph="ocr.output.placeholder" placeholder="Extracted text will appear here…"></textarea>
             <div class="row">
-              <button class="btn" id="ocr-copy"><i class="ti ti-copy"></i>Copy</button>
-              <button class="btn" id="ocr-export"><i class="ti ti-download"></i>Save .txt</button>
+              <button class="btn" id="ocr-copy"><i class="ti ti-copy"></i><span data-i18n="btn.copy">Copy</span></button>
+              <button class="btn" id="ocr-export"><i class="ti ti-download"></i><span data-i18n="ocr.saveTxt">Save .txt</span></button>
             </div>
           </div>
         </section>
@@ -130,18 +150,18 @@
         <section class="view" id="view-bijoy">
           <div class="stack">
             <div class="row">
-              <span class="label">Paste old Bangla text here (Bijoy / SutonnyMJ font)</span>
-              <span class="detect-pill" id="bj-detect" style="margin-left:auto;">Paste text to detect</span>
+              <span class="label" data-i18n="bijoy.inputLabel">Paste old Bangla text here (Bijoy / SutonnyMJ font)</span>
+              <span class="detect-pill" id="bj-detect" data-i18n="bijoy.detect.idle" style="margin-left:auto;">Paste text to detect</span>
             </div>
-            <textarea class="field" id="bj-in" placeholder="Avwg evsjvq wjwL…  ← paste Bijoy-encoded text here"></textarea>
+            <textarea class="field" id="bj-in" data-i18n-ph="bijoy.input.placeholder" placeholder="Avwg evsjvq wjwL…  ← paste Bijoy-encoded text here"></textarea>
             <div class="row">
-              <button class="btn primary" id="bj-run"><i class="ti ti-arrow-down"></i>Convert to proper Unicode Bangla</button>
+              <button class="btn primary" id="bj-run"><i class="ti ti-arrow-down"></i><span data-i18n="bijoy.run">Convert to proper Unicode Bangla</span></button>
             </div>
-            <span class="label">Result — readable Unicode Bangla</span>
-            <textarea class="field" id="bj-out" placeholder="আমি বাংলায় লিখি… ← converted text appears here" readonly></textarea>
+            <span class="label" data-i18n="bijoy.resultLabel">Result — readable Unicode Bangla</span>
+            <textarea class="field" id="bj-out" data-i18n-ph="bijoy.output.placeholder" placeholder="আমি বাংলায় লিখি… ← converted text appears here" readonly></textarea>
             <div class="row">
-              <button class="btn" id="bj-copy"><i class="ti ti-copy"></i>Copy</button>
-              <button class="btn" id="bj-export"><i class="ti ti-download"></i>Save .txt</button>
+              <button class="btn" id="bj-copy"><i class="ti ti-copy"></i><span data-i18n="btn.copy">Copy</span></button>
+              <button class="btn" id="bj-export"><i class="ti ti-download"></i><span data-i18n="bijoy.saveTxt">Save .txt</span></button>
             </div>
           </div>
         </section>
@@ -149,8 +169,8 @@
         <!-- ── History view ──────────────────────────────────────────────── -->
         <section class="view" id="view-history">
           <div class="row" style="margin-bottom:14px;">
-            <span class="label" id="hist-count">No conversions yet</span>
-            <button class="btn ghost" id="hist-clear" style="margin-left:auto;"><i class="ti ti-trash"></i>Clear history</button>
+            <span class="label" id="hist-count" data-i18n="history.count.none">No conversions yet</span>
+            <button class="btn ghost" id="hist-clear" style="margin-left:auto;"><i class="ti ti-trash"></i><span data-i18n="history.clear">Clear history</span></button>
           </div>
           <div id="hist-list"></div>
         </section>
@@ -159,44 +179,44 @@
         <section class="view" id="view-settings">
           <div class="settings-wrap">
             <div class="setting">
-              <h3>Colour theme</h3>
-              <p>Choose an accent palette. Each adapts to light and dark mode.</p>
-              <div class="palette-grid" id="palette-grid">
-                <div class="palette-card" data-palette="indigo">
+              <h3 data-i18n="settings.theme.title">Colour theme</h3>
+              <p data-i18n="settings.theme.desc">Choose an accent palette. Each adapts to light and dark mode.</p>
+              <div class="palette-grid" id="palette-grid" role="radiogroup" aria-label="Colour theme">
+                <div class="palette-card" data-palette="indigo" role="radio" tabindex="0">
                   <div class="swatches"><div class="sw" style="background:#0A6E5C"></div><div class="sw" style="background:#14A88A"></div><div class="sw" style="background:#3A4A9E"></div></div>
-                  <div class="pname">GRU953 Teal</div><div class="ptag">growth · open</div>
+                  <div class="pname" data-i18n="settings.theme.teal.name">GRU953 Teal</div><div class="ptag" data-i18n="settings.theme.teal.tag">growth · open</div>
                 </div>
-                <div class="palette-card" data-palette="violet">
+                <div class="palette-card" data-palette="violet" role="radio" tabindex="0">
                   <div class="swatches"><div class="sw" style="background:#3A4A9E"></div><div class="sw" style="background:#97A3E0"></div><div class="sw" style="background:#0A6E5C"></div></div>
-                  <div class="pname">GRU953 Indigo</div><div class="ptag">depth · trust</div>
+                  <div class="pname" data-i18n="settings.theme.indigo.name">GRU953 Indigo</div><div class="ptag" data-i18n="settings.theme.indigo.tag">depth · trust</div>
                 </div>
-                <div class="palette-card" data-palette="slate">
+                <div class="palette-card" data-palette="slate" role="radio" tabindex="0">
                   <div class="swatches"><div class="sw" style="background:#9C6B12"></div><div class="sw" style="background:#F4B53C"></div><div class="sw" style="background:#0A6E5C"></div></div>
-                  <div class="pname">GRU953 Amber</div><div class="ptag">warm · energy</div>
+                  <div class="pname" data-i18n="settings.theme.amber.name">GRU953 Amber</div><div class="ptag" data-i18n="settings.theme.amber.tag">warm · energy</div>
                 </div>
               </div>
             </div>
             <div class="setting">
-              <h3>Smart conversion</h3>
-              <p>Applied automatically inside the single Convert step.</p>
+              <h3 data-i18n="settings.smart.title">Smart conversion</h3>
+              <p data-i18n="settings.smart.desc">Applied automatically inside the single Convert step.</p>
               <div class="row" style="gap:22px;">
-                <label class="checkbox"><input type="checkbox" id="set-auto-ocr"> Auto-OCR image files</label>
-                <label class="checkbox"><input type="checkbox" id="set-auto-bijoy"> Auto-convert Bijoy → Unicode</label>
+                <label class="checkbox"><input type="checkbox" id="set-auto-ocr"> <span data-i18n="settings.smart.autoOcr">Auto-OCR image files</span></label>
+                <label class="checkbox"><input type="checkbox" id="set-auto-bijoy"> <span data-i18n="settings.smart.autoBijoy">Auto-convert Bijoy → Unicode</span></label>
               </div>
             </div>
             <div class="setting">
-              <h3>Default OCR language</h3>
-              <p>Used by the unified Convert pipeline for images.</p>
-              <div class="seg" id="set-ocr-lang">
-                <button data-lang="English">English</button>
-                <button data-lang="বাংলা">বাংলা</button>
-                <button data-lang="Both">Both</button>
+              <h3 data-i18n="settings.ocrLang.title">Default OCR language</h3>
+              <p data-i18n="settings.ocrLang.desc">Used by the unified Convert pipeline for images.</p>
+              <div class="seg" id="set-ocr-lang" role="radiogroup" aria-label="Default OCR language">
+                <button data-lang="English" role="radio" data-i18n="lang.english">English</button>
+                <button data-lang="বাংলা" role="radio" data-i18n="lang.bangla">বাংলা</button>
+                <button data-lang="Both" role="radio" data-i18n="lang.both">Both</button>
               </div>
             </div>
             <div class="setting">
-              <h3>About</h3>
-              <p id="about-ver">GRU953 Markdown · GRU953</p>
-              <p style="margin-top:4px;font-size:12px;color:var(--text-faint)">Powered by Microsoft MarkItDown &amp; Tesseract OCR · <a href="https://github.com/GRU-953/gru953-markdown" target="_blank" style="color:var(--primary)">GitHub</a></p>
+              <h3 data-i18n="settings.about.title">About</h3>
+              <p id="about-ver" data-i18n="settings.about.line">GRU953 Markdown · GRU953</p>
+              <p style="margin-top:4px;font-size:12px;color:var(--text-faint)"><span data-i18n="settings.about.credit">Powered by Microsoft MarkItDown &amp; Tesseract OCR · </span><a href="https://github.com/GRU-953/gru953-markdown" target="_blank" style="color:var(--primary)" data-i18n="settings.about.github">GitHub</a></p>
             </div>
           </div>
         </section>
@@ -205,44 +225,43 @@
     </div>
   </div>
 
-  <div class="toast-wrap" id="toasts"></div>
+  <div class="toast-wrap" id="toasts" aria-live="polite"></div>
 
   <!-- ── First-run onboarding overlay ──────────────────────────────────── -->
-  <div class="onboard-backdrop" id="onboard" style="display:none" role="dialog" aria-modal="true">
+  <div class="onboard-backdrop" id="onboard" style="display:none" role="dialog" aria-modal="true" aria-labelledby="onboard-title">
     <div class="onboard-card">
       <div class="onboard-logo">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="28" height="28" aria-hidden="true">
-          <path d="M14 36 L14 15 L32 27 L50 15 L50 36" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-          <line x1="32" y1="40" x2="32" y2="51" stroke="#F4B53C" stroke-width="4" stroke-linecap="round"/>
-          <path d="M25 45 L32 52 L39 45" fill="none" stroke="#F4B53C" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        <svg viewBox="0 0 64 64" width="56" height="56" role="img" aria-label="GRU953 Markdown">
+          <rect width="64" height="64" rx="15" fill="#10211D"/>
+          <use href="#bird" x="12" y="12" width="40" height="40" fill="url(#brandgrad)"/>
         </svg>
       </div>
-      <h2 class="onboard-title">Welcome to GRU953 Markdown</h2>
-      <p class="onboard-sub">Turn any document into clean text — in three simple steps.</p>
+      <h2 class="onboard-title" id="onboard-title" data-i18n="onboard.title">Welcome to GRU953 Markdown</h2>
+      <p class="onboard-sub" data-i18n="onboard.sub">Turn any document into clean text — in three simple steps.</p>
       <div class="onboard-steps">
         <div class="onboard-step">
           <div class="onboard-icon"><i class="ti ti-files"></i></div>
           <div>
-            <strong>Drop your files</strong>
-            <p>Drag a Word document, PDF, spreadsheet, or image into the Convert tab — or click "Add files".</p>
+            <strong data-i18n="onboard.step1.title">Drop your files</strong>
+            <p data-i18n="onboard.step1.desc">Drag a Word document, PDF, spreadsheet, or image into the Convert tab — or click "Add files".</p>
           </div>
         </div>
         <div class="onboard-step">
           <div class="onboard-icon"><i class="ti ti-wand"></i></div>
           <div>
-            <strong>One click converts</strong>
-            <p>Hit <em>Convert all</em>. The app reads the text, scans images automatically, and fixes old Bangla fonts.</p>
+            <strong data-i18n="onboard.step2.title">One click converts</strong>
+            <p data-i18n="onboard.step2.desc">Hit Convert all. The app reads the text, scans images automatically, and fixes old Bangla fonts.</p>
           </div>
         </div>
         <div class="onboard-step">
           <div class="onboard-icon"><i class="ti ti-download"></i></div>
           <div>
-            <strong>Save or copy</strong>
-            <p>Export as Markdown, plain text, or HTML — or just copy straight to your clipboard.</p>
+            <strong data-i18n="onboard.step3.title">Save or copy</strong>
+            <p data-i18n="onboard.step3.desc">Export as Markdown, plain text, or HTML — or just copy straight to your clipboard.</p>
           </div>
         </div>
       </div>
-      <button class="btn primary onboard-btn" id="onboard-close">Get started</button>
+      <button class="btn primary onboard-btn" id="onboard-close" data-i18n="onboard.getStarted">Get started</button>
     </div>
   </div>
 
