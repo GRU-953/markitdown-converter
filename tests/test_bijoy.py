@@ -86,6 +86,12 @@ class TestDetectScript:
         # bj=3 (©, ©, ©) + bn=1 (ক) → unicode_bn (bn > 0 short-circuits)
         assert detect_script("©©©ক") == "unicode_bn"
 
+    def test_only_non_counted_chars_returns_other(self):
+        """Characters outside all three counted ranges (Bengali/Bijoy/ASCII-Latin) → total=0 → 'other'."""
+        # Cyrillic А (U+0410) is non-ASCII, outside the Bijoy and Bengali ranges, non-Latin.
+        # bn=0, bj=0, la=0 → total == 0 → return "other" (line 444–445).
+        assert detect_script("АБВГД") == "other"
+
 
 # ── is_bijoy ──────────────────────────────────────────────────────────────────
 
@@ -257,6 +263,13 @@ class TestConvertBijoyToUnicode:
         result = _rearrange(before)
         # The nukta is moved AFTER the halant-consonant pair
         assert result.index("্") < result.index("ঁ")
+
+    def test_prekar_ai_kar_repositioned_via_else_branch(self):
+        """_rearrange Pass 2: ৈ (AI-kar) is a pre-kar but not ে, so else: base += c fires."""
+        # ৈ (U+09C8) followed by ক: pre-kar is moved after the consonant.
+        # c == "ৈ" ≠ "ে" → neither composite branch fires → else: base += c at line 398.
+        result = _rearrange("ৈক")
+        assert result == "কৈ"
 
     def test_reph_preceded_by_halant_not_repositioned(self):
         """_rearrange Pass 1: when র is preceded by ্ (halant), reph guard fires → no repositioning."""

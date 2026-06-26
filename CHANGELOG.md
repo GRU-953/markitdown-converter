@@ -4,6 +4,18 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.62] — 2026-06-27
+
+### Tests — 0Table flag, cp0 zero fallback, AI-kar pre-kar else branch, Cyrillic other, all-pages-fail OCR (301 total, up from 296)
+
+- `TestExtractLegacyDoc.test_0table_flag_extracts_text`: FIB flags bit 9 clear → `table_name = "0Table"`; cp0 path returns text (complements the 1Table test)
+- `TestExtractLegacyDoc.test_cp0_zero_falls_back_to_scan`: table stream present, fc_chpx in-bounds, but `cp0 = 0` fails `0 < cp0` → `text_start` stays `None` → fallback ASCII scan runs and succeeds
+- `TestConvertBijoyToUnicode.test_prekar_ai_kar_repositioned_via_else_branch`: `_rearrange` Pass 2 — ৈ (AI-kar, `_PRE_KARS` member) is not ে, so the composite-vowel `else: base += c` branch (line 398) fires; consonant + AI-kar repositioned correctly
+- `TestDetectScript.test_only_non_counted_chars_returns_other`: Cyrillic-only string has `bn = bj = la = 0`; `total == 0` triggers `return "other"` (line 444–445)
+- `TestOcrPdf.test_all_pages_fail_returns_empty`: every PDF page raises `ValueError`; all `pages_text` entries are `""`; the `if p` filter in `"\n\n".join(...)` produces an empty string
+
+---
+
 ## [v4.10.61] — 2026-06-27
 
 ### Tests — legacy doc cp0 bounds + OCR partial failure (296 total, up from 294)

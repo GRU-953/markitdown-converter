@@ -1000,6 +1000,65 @@ class TestExtractLegacyDoc:
         monkeypatch.setitem(sys.modules, "olefile", fake_mod)
         assert _extract_legacy_doc("x.doc") == "A" * 20
 
+    def test_0table_flag_extracts_text(self, monkeypatch):
+        """FIB flags bit 9 clear → table_name = '0Table'; cp0 path returns text."""
+        import struct as _struct
+        binary = bytearray(512)
+        _struct.pack_into("<H", binary, 10, 0x0000)  # bit 9 NOT set → 0Table
+        _struct.pack_into("<I", binary, 48, 20)       # cc_text = 20
+        _struct.pack_into("<I", binary, 134, 4)       # fc_chpx = 4 → cp0 from tdata[4:8]
+        for i in range(200, 220):
+            binary[i] = ord("D")
+        binary = bytes(binary)
+        tdata = bytearray(8)
+        _struct.pack_into("<I", tdata, 4, 200)        # cp0 = 200
+        tdata = bytes(tdata)
+
+        class FakeStream:
+            def __init__(self, data): self._data = data
+            def read(self): return self._data
+
+        class FakeOleFileIO:
+            def __init__(self, path): pass
+            def __enter__(self): return self
+            def __exit__(self, *a): pass
+            def exists(self, name): return name in ("WordDocument", "0Table")
+            def openstream(self, name):
+                return FakeStream(binary if name == "WordDocument" else tdata)
+
+        fake_mod = type("olefile", (), {"OleFileIO": FakeOleFileIO})
+        monkeypatch.setitem(sys.modules, "olefile", fake_mod)
+        assert _extract_legacy_doc("x.doc") == "D" * 20
+
+    def test_cp0_zero_falls_back_to_scan(self, monkeypatch):
+        """Table stream exists, fc_chpx valid, but cp0 = 0 fails '0 < cp0' → fallback scan used."""
+        import struct as _struct
+        binary = bytearray(512)
+        _struct.pack_into("<I", binary, 48, 20)       # cc_text = 20
+        _struct.pack_into("<I", binary, 134, 4)       # fc_chpx = 4 → reads tdata[4:8] = 0
+        for i in range(200, 220):
+            binary[i] = ord("E")
+        binary = bytes(binary)
+        tdata = bytearray(8)
+        # tdata[4:8] = 0x00000000 → cp0 = 0 → fails '0 < cp0' → text_start stays None → fallback scan
+        tdata = bytes(tdata)
+
+        class FakeStream:
+            def __init__(self, data): self._data = data
+            def read(self): return self._data
+
+        class FakeOleFileIO:
+            def __init__(self, path): pass
+            def __enter__(self): return self
+            def __exit__(self, *a): pass
+            def exists(self, name): return name in ("WordDocument", "0Table")
+            def openstream(self, name):
+                return FakeStream(binary if name == "WordDocument" else tdata)
+
+        fake_mod = type("olefile", (), {"OleFileIO": FakeOleFileIO})
+        monkeypatch.setitem(sys.modules, "olefile", fake_mod)
+        assert _extract_legacy_doc("x.doc") == "E" * 20
+
     def test_no_table_stream_fallback_scan_extracts_text(self, monkeypatch):
         """When no table stream exists, the fallback ASCII density scan locates printable text."""
         import struct as _struct

@@ -310,6 +310,22 @@ class TestOcrPdf:
         # Empty string from page 1 is filtered by `if p` in the join
         assert result == "page 2 text"
 
+    def test_all_pages_fail_returns_empty(self, tmp_path):
+        """Every page raises a generic exception; all pages_text entries are ''; join returns ''."""
+        f = tmp_path / "doc.pdf"
+        f.write_bytes(b"dummy")
+        page1 = self._make_page()
+        page2 = self._make_page()
+        mock_doc = unittest.mock.MagicMock()
+        mock_doc.__iter__ = unittest.mock.MagicMock(side_effect=lambda: iter([page1, page2]))
+        fake_pymupdf = unittest.mock.MagicMock()
+        fake_pymupdf.open.return_value = mock_doc
+        with unittest.mock.patch.dict(sys.modules, {"pymupdf": fake_pymupdf}), \
+             unittest.mock.patch("pytesseract.image_to_string",
+                                  side_effect=ValueError("bad page")):
+            result = ocr_pdf(str(f))
+        assert result == ""
+
     def test_unknown_language_uses_eng_fallback(self, tmp_path):
         """Unrecognised language name → LANG_CODES.get default → 'eng'."""
         f = tmp_path / "doc.pdf"

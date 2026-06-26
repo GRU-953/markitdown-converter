@@ -184,7 +184,7 @@ build_exe.bat
 ```bash
 pip install pytest pytest-cov
 pytest tests/ -v
-# 296 tests across pipeline, bijoy_unicode, ocr_engine, settings
+# 301 tests across pipeline, bijoy_unicode, ocr_engine, settings
 ```
 
 Built with [pywebview](https://pywebview.flowrl.com/) · [MarkItDown](https://github.com/microsoft/markitdown) · [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) · DM Sans · Noto Sans Bengali  
