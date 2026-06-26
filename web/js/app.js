@@ -6,6 +6,7 @@ let cfg = { theme: "System", palette: "indigo", language: "en",
             use_windows_colors: false };
 let platform = "windows"; // updated during start(); defaults to windows for safety
 let isLowEnd = false;     // set during start(); suppresses expensive animations
+let cpuCount = 1;         // set during start(); used to scale conversion concurrency
 let files = [];          // {path, name, is_image, status, text, steps, error}
 let selected = -1;
 let outMode = "preview"; // preview | edit
@@ -70,9 +71,12 @@ async function start() {
   if (cfgRes.status === "fulfilled") cfg = Object.assign(cfg, cfgRes.value);
   LOCALES = locRes.status === "fulfilled" ? locRes.value : {};
   if (platRes.status === "fulfilled") platform = platRes.value;
-  if (sysRes.status === "fulfilled" && sysRes.value.is_low_end) {
-    isLowEnd = true;
-    document.documentElement.setAttribute("data-perf", "low");
+  if (sysRes.status === "fulfilled") {
+    cpuCount = sysRes.value.cpu_count || 1;
+    if (sysRes.value.is_low_end) {
+      isLowEnd = true;
+      document.documentElement.setAttribute("data-perf", "low");
+    }
   }
   lang = (cfg.language === "bn") ? "bn" : "en";
   applyTheme(); applyPalette(); applyPlatform();
@@ -339,26 +343,44 @@ async function convertAll() {
   const btn = $("convert-btn");
   btn.disabled = true; btn.setAttribute("aria-busy", "true");
   let doneCount = 0;
-  btn.textContent = t("convert.converting", { done: 0, total: todo.length });
-  try {
-    for (const f of files) {
-      if (f.status !== "pending" && f.status !== "error") continue;
-      f.status = "doing"; f.error = ""; renderFiles();
-      try {
-        const res = await api().convert(f.path);
-        if (res.ok) {
-          f.text = res.text; f.steps = res.steps;
-          f.status = res.steps.some(s => EMPTY_STEPS.has(s)) ? "warn" : "done";
-        } else {
-          f.status = "error"; f.error = friendlyError(res.error);
-        }
-      } catch (e) {
-        f.status = "error"; f.error = friendlyError(String(e));
+  const total = todo.length;
+  btn.textContent = t("convert.converting", { done: 0, total });
+
+  // Scale concurrency to CPU cores: 1 on low-end; up to 4 on capable machines.
+  // Conservative cap avoids memory pressure on typical consumer hardware.
+  const concurrency = isLowEnd ? 1 : Math.min(Math.max(1, Math.floor(cpuCount / 2)), 4);
+
+  async function convertOne(f) {
+    f.status = "doing"; f.error = ""; renderFiles();
+    try {
+      const res = await api().convert(f.path);
+      if (res.ok) {
+        f.text = res.text; f.steps = res.steps;
+        f.status = res.steps.some(s => EMPTY_STEPS.has(s)) ? "warn" : "done";
+      } else {
+        f.status = "error"; f.error = friendlyError(res.error);
       }
-      doneCount++;
-      btn.textContent = t("convert.converting", { done: doneCount, total: todo.length });
-      renderFiles();
-      if (selected === files.indexOf(f) || selected < 0) selectFile(files.indexOf(f));
+    } catch (e) {
+      f.status = "error"; f.error = friendlyError(String(e));
+    }
+    doneCount++;
+    btn.textContent = t("convert.converting", { done: doneCount, total });
+    renderFiles();
+    if (selected === files.indexOf(f) || selected < 0) selectFile(files.indexOf(f));
+  }
+
+  try {
+    if (concurrency <= 1) {
+      for (const f of todo) await convertOne(f);
+    } else {
+      // Worker-pool: keep `concurrency` conversions in flight simultaneously.
+      const queue = todo.slice();
+      await Promise.all(Array.from({ length: concurrency }, async () => {
+        while (queue.length > 0) {
+          const f = queue.shift();
+          if (f) await convertOne(f);
+        }
+      }));
     }
   } finally {
     btn.disabled = false; btn.removeAttribute("aria-busy");

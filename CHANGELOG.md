@@ -4,6 +4,15 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.11] — 2026-06-26
+
+### Improved — concurrent batch conversion on multi-core machines
+- `convertAll()` now uses an adaptive worker-pool pattern. On machines with more than 2 CPU cores, it launches up to `floor(cpu_count / 2)` conversions in parallel (capped at 4 to avoid memory pressure). On low-end hardware (≤ 2 cores), the behaviour is unchanged — strictly sequential.
+- A 4-core machine converts batches roughly twice as fast; an 8-core machine up to 4× faster, depending on file types and I/O.
+- Single-file conversions are unaffected. The CPU count is obtained from `get_system_info()` which already runs in parallel with the other startup calls.
+
+---
+
 ## [v4.10.10] — 2026-06-26
 
 ### Improved — README keyboard shortcuts
