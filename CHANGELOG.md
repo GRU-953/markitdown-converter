@@ -4,6 +4,15 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.1] — 2026-06-26
+
+### Removed — dead API bridge methods
+- `Api.ocr()` — became dead code when the Scan tab was removed in v4.9.0; no frontend JS calls it. Removed to shrink the attack surface.
+- `Api.tesseract_ok()` — was called by the Scan tab's feature-detection flow; no caller since v4.9.0. Removed.
+- `Api.pymupdf_ok()` — same; no caller since v4.9.0. Removed.
+
+---
+
 ## [v4.10.0] — 2026-06-26
 
 ### Performance — faster startup

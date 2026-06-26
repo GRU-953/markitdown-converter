@@ -23,7 +23,7 @@ from bijoy_unicode import convert_bijoy_to_unicode, detect_script
 # init until first actual OCR call so the window opens faster on startup.
 from pipeline import convert_file, is_image, is_pdf, is_legacy_doc
 
-APP_VERSION = "v4.10.0"
+APP_VERSION = "v4.10.1"
 MAX_FILE_BYTES = 200 * 1024 * 1024  # 200 MB hard limit
 _RELEASES_API = "https://api.github.com/repos/GRU-953/gru953-markdown/releases/latest"
 
@@ -176,47 +176,13 @@ class Api:
             _settings.save(self._cfg)
             return {"ok": False, "error": str(exc)}
 
-    # ── OCR + Bijoy (standalone views) ────────────────────────────────────────
-
-    def ocr(self, path: str, language: str, auto_bijoy: bool) -> dict:
-        try:
-            from ocr_engine import tesseract_available, pymupdf_available, ocr_image, ocr_pdf
-            _validate_path(path)
-            if not tesseract_available():
-                return {"ok": False, "error": "Tesseract OCR is not available."}
-            if is_pdf(path):
-                if not pymupdf_available():
-                    return {"ok": False, "error": "PDF scanning requires pymupdf — run: pip install pymupdf"}
-                text = ocr_pdf(path, language)
-            else:
-                text = ocr_image(path, language)
-            if auto_bijoy and text:
-                from bijoy_unicode import is_bijoy
-                if is_bijoy(text):
-                    text = convert_bijoy_to_unicode(text)
-            return {"ok": True, "text": text}
-        except Exception as exc:
-            return {"ok": False, "error": str(exc)}
+    # ── Bijoy (standalone view) ───────────────────────────────────────────────
 
     def bijoy_convert(self, text: str) -> dict:
         return {"ok": True, "text": convert_bijoy_to_unicode(text or "")}
 
     def detect(self, text: str) -> str:
         return detect_script((text or "")[:300])
-
-    def tesseract_ok(self) -> bool:
-        try:
-            from ocr_engine import tesseract_available
-            return tesseract_available()
-        except Exception:
-            return False
-
-    def pymupdf_ok(self) -> bool:
-        try:
-            from ocr_engine import pymupdf_available
-            return pymupdf_available()
-        except Exception:
-            return False
 
     # ── Windows appearance ────────────────────────────────────────────────────
 
