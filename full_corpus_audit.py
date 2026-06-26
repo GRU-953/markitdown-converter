@@ -8,6 +8,7 @@ automatically on better machines:
   Sort order   smallest files first; large files last
   Large ZIPs   extracted to temp dir; each member tested individually (no OOM)
   Large PDFs   split into 50-page chunks; each chunk tested separately
+  Large XLSX   split into per-sheet temp files; each sheet tested separately
   RAM throttle dispatching pauses if system RAM exceeds --ram-cap (default 88%)
   Worker       single ONNX session per lifetime (not reloaded per file)
                gc.collect() after every file; thread counts capped to CPU budget
@@ -541,8 +542,8 @@ def main():
                     help="Base per-file timeout in seconds; scales +1s/MB (default 120)")
     ap.add_argument("--ram-cap", type=int, default=88,
                     help="Pause dispatch if system RAM %% >= this value (default 88)")
-    ap.add_argument("--expand-threshold", type=float, default=30.0,
-                    help="Expand ZIPs / split PDFs above this size in MB (default 30)")
+    ap.add_argument("--expand-threshold", type=float, default=20.0,
+                    help="Expand ZIPs / split PDFs/XLSX above this size in MB (default 20)")
     ap.add_argument("--pdf-chunk-pages", type=int, default=50,
                     help="Pages per PDF chunk when splitting (default 50)")
     args = ap.parse_args()
@@ -583,7 +584,7 @@ def main():
         print(f"  GPU: {gpu_info}")
         print(f"  RAM cap: {args.ram_cap}%  •  base timeout: {args.file_timeout}s")
         print(f"  Expand threshold: {args.expand_threshold} MB  "
-              f"(PDF chunks: {args.pdf_chunk_pages} pages)")
+              f"(PDF chunks: {args.pdf_chunk_pages} pages, XLSX by sheet)")
         print(f"  OCR: {'on' if auto_ocr else 'off'}")
         if split_log:
             print(f"  Expanded {len(split_log)} large file(s):")

@@ -342,18 +342,24 @@ def convert_file(
                 text = ""
         steps.append("rtf")
     elif is_xlsx(p):
-        # Try MarkItDown first; fall back to openpyxl read_only on any failure.
-        # Large XLSX files can trigger ONNXRuntimeError (magika model allocation)
-        # or a MarkItDownException wrapping MemoryError (numpy array too large).
-        # openpyxl read_only streams rows lazily and uses no ONNX models.
-        try:
-            md = markitdown or _get_markitdown()
-            result = md.convert(str(p))
-            text = result.text_content or ""
-            steps.append("markitdown")
-        except Exception:
+        # XLSX ≥ 5 MB: MarkItDown's table formatter builds the full sheet in
+        # memory and can hang indefinitely on large files (no exception raised).
+        # Use openpyxl read_only streaming directly — lazy row iteration, no ONNX.
+        # XLSX < 5 MB: try MarkItDown first (richer markdown table output);
+        # fall back to openpyxl on any exception (MemoryError, ONNX error, etc.).
+        _xlsx_mb = p.stat().st_size / (1024 * 1024)
+        if _xlsx_mb >= 5.0:
             text = _extract_xlsx_direct(str(p))
             steps.append("xlsx_direct")
+        else:
+            try:
+                md = markitdown or _get_markitdown()
+                result = md.convert(str(p))
+                text = result.text_content or ""
+                steps.append("markitdown")
+            except Exception:
+                text = _extract_xlsx_direct(str(p))
+                steps.append("xlsx_direct")
         if not text.strip():
             steps.append("xlsx_empty")
     elif is_plain_text(p):

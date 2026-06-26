@@ -139,7 +139,7 @@ pip install pytest pytest-cov
 pytest tests/ --cov=bijoy_unicode --cov=ocr_engine --cov=utils --cov=settings --cov=pipeline
 ```
 
-**144 tests** across all five logic modules. CI runs them on every push
+**145 tests** across all five logic modules. CI runs them on every push
 (Python 3.11 + 3.12) and the release workflow runs them before building the exe.
 
 ---
@@ -159,7 +159,7 @@ markitdown-converter/
 │   ├── css/{themes,styles}.css
 │   └── js/{app.js, vendor/marked.min.js}
 ├── assets/               # fonts (OFL), app icon, brand mark
-├── tests/                # pytest suite — 144 tests
+├── tests/                # pytest suite — 145 tests
 ├── build_exe.bat         # PyInstaller build script
 └── .github/workflows/    # CI (pytest + coverage) and auto-release (exe on tag)
 ```
