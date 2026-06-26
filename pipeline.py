@@ -188,11 +188,11 @@ def _extract_xlsx_direct(path: str) -> str:
     """
     Extract text from an XLSX file using openpyxl in read_only mode.
 
-    This is a memory-efficient fallback for files that exhaust MarkItDown's ONNX
-    models or cause numpy to fail allocating huge arrays.  read_only=True streams
-    rows lazily so memory use stays proportional to one row at a time, not the
-    full sheet.  Returns empty string if openpyxl is unavailable or extraction
-    fails for any reason.
+    Uses read_only=True so memory is proportional to one row at a time, not the
+    full sheet. Outputs one GFM markdown table per worksheet (first row = header).
+    Multi-sheet workbooks get an H2 heading per sheet.
+
+    Returns empty string if openpyxl is unavailable or extraction fails.
     """
     try:
         import openpyxl
@@ -200,14 +200,32 @@ def _extract_xlsx_direct(path: str) -> str:
         return ""
     try:
         wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
-        rows = []
+        sections = []
         for sheet in wb.worksheets:
+            sheet_rows = []
             for row in sheet.iter_rows(values_only=True):
-                cells = [str(v) for v in row if v is not None]
-                if cells:
-                    rows.append(" | ".join(cells))
+                cells = [
+                    str(v).replace("|", "\\|").replace("\n", " ")
+                    if v is not None else ""
+                    for v in row
+                ]
+                if any(c.strip() for c in cells):
+                    sheet_rows.append(cells)
+            if not sheet_rows:
+                continue
+            # Pad all rows to the same column count so GFM table is valid
+            max_cols = max(len(r) for r in sheet_rows)
+            padded = [r + [""] * (max_cols - len(r)) for r in sheet_rows]
+            header = "| " + " | ".join(padded[0]) + " |"
+            sep    = "| " + " | ".join(["---"] * max_cols) + " |"
+            data   = "\n".join("| " + " | ".join(r) + " |" for r in padded[1:])
+            table  = header + "\n" + sep + ("\n" + data if len(padded) > 1 else "")
+            if len(wb.worksheets) > 1 and sheet.title:
+                sections.append("## " + sheet.title + "\n\n" + table)
+            else:
+                sections.append(table)
         wb.close()
-        return "\n".join(rows)
+        return "\n\n".join(sections)
     except Exception:
         return ""
 

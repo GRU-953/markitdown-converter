@@ -4,6 +4,15 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.18] — 2026-06-26
+
+### Improved — Excel output renders as a formatted table
+- `_extract_xlsx_direct()` (used for XLSX files ≥ 2 MB and as the fallback for smaller files that fail MarkItDown) now outputs valid GitHub-Flavored Markdown tables instead of pipe-separated plain text. The first row of each sheet is treated as the column header, followed by a separator row, then data rows. All rows are padded to the same column count so the table is well-formed.
+- Multi-sheet workbooks output one table per sheet, with an H2 heading for each sheet title.
+- Pipe characters inside cell values are escaped (`\|`) so they do not break the table structure. Embedded newlines inside cells are replaced with spaces.
+
+---
+
 ## [v4.10.17] — 2026-06-26
 
 ### Added — Check for updates button in Settings
