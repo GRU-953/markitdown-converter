@@ -4,6 +4,21 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.50] — 2026-06-27
+
+### Tests — PPTX master/theme paths and ODT comma-suffix (250 total, up from 247)
+
+Three new tests covering previously untested XML scanning paths:
+
+**`TestPptxFontDetection`:**
+- `test_slide_master_font_detected`: Bijoy font in `ppt/slideMasters/slideMaster1.xml` → `True`; confirms the `ppt/slideMasters/` prefix is scanned (templates often set the body font on the master, not individual slides)
+- `test_theme_font_detected`: Bijoy font in `ppt/theme/theme1.xml` as `<a:majorFont>` → `True`; confirms the `ppt/theme/` prefix is scanned
+
+**`TestOdtFontDetection`:**
+- `test_comma_suffix_in_svg_font_family_stripped`: `svg:font-family="SutonnyMJ,Bold"` → comma stripped → `"sutonnymj"` → `True`; directly exercises the `comma = norm.find(","); if comma >= 0: norm = norm[:comma].strip()` path in `_odt_font_has_bijoy` for SVG font-family declarations
+
+---
+
 ## [v4.10.49] — 2026-06-27
 
 ### Tests — font-attribute-level coverage for DOCX, PPTX, ODT (247 total, up from 244)

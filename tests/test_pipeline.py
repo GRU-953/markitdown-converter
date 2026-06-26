@@ -1128,6 +1128,42 @@ class TestPptxFontDetection:
             z.writestr("ppt/slides/slide1.xml", xml)
         assert _pptx_font_has_bijoy(str(pptx_path)) is True
 
+    def test_slide_master_font_detected(self, tmp_path):
+        """Bijoy font in a slide master (ppt/slideMasters/) is also scanned → True."""
+        import zipfile
+        pptx_path = tmp_path / "master_font.pptx"
+        xml = (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<p:sldMaster xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"'
+            '             xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">'
+            '<p:spTree><p:sp><p:txBody><a:p><a:r>'
+            '<a:rPr><a:latin typeface="SutonnyMJ"/></a:rPr>'
+            '<a:t>evsjv</a:t>'
+            '</a:r></a:p></p:txBody></p:sp></p:spTree></p:sldMaster>'
+        )
+        with zipfile.ZipFile(str(pptx_path), "w") as z:
+            z.writestr("ppt/slideMasters/slideMaster1.xml", xml)
+        assert _pptx_font_has_bijoy(str(pptx_path)) is True
+
+    def test_theme_font_detected(self, tmp_path):
+        """Bijoy font in the theme file (ppt/theme/) is also scanned → True."""
+        import zipfile
+        pptx_path = tmp_path / "theme_font.pptx"
+        xml = (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"'
+            '         name="BijoyTheme">'
+            '<a:themeElements>'
+            '<a:fontScheme name="Office">'
+            '<a:majorFont><a:latin typeface="SutonnyMJ"/></a:majorFont>'
+            '</a:fontScheme>'
+            '</a:themeElements>'
+            '</a:theme>'
+        )
+        with zipfile.ZipFile(str(pptx_path), "w") as z:
+            z.writestr("ppt/theme/theme1.xml", xml)
+        assert _pptx_font_has_bijoy(str(pptx_path)) is True
+
     def test_empty_zip_no_parts_returns_false(self, tmp_path):
         """PPTX ZIP with no matching XML parts → parts is empty → False."""
         import zipfile
@@ -1237,6 +1273,25 @@ class TestOdtFontDetection:
         )
         with zipfile.ZipFile(str(odt_path), "w") as z:
             z.writestr("styles.xml", styles_xml)
+        assert _odt_font_has_bijoy(str(odt_path)) is True
+
+    def test_comma_suffix_in_svg_font_family_stripped(self, tmp_path):
+        """svg:font-family='SutonnyMJ,Bold' → comma stripped → 'sutonnymj' → True."""
+        import zipfile
+        odt_path = tmp_path / "comma_font.odt"
+        xml = (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<office:document-content'
+            '  xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"'
+            '  xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0"'
+            '  xmlns:svg="http://www.w3.org/2000/svg">'
+            '<office:font-face-decls>'
+            '<style:font-face style:name="SutonnyMJ" svg:font-family="SutonnyMJ,Bold"/>'
+            '</office:font-face-decls>'
+            '</office:document-content>'
+        )
+        with zipfile.ZipFile(str(odt_path), "w") as z:
+            z.writestr("content.xml", xml)
         assert _odt_font_has_bijoy(str(odt_path)) is True
 
     def test_bijoy_fo_font_in_styles_xml_detected(self, tmp_path):
