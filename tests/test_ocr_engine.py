@@ -173,25 +173,36 @@ class TestOcrPdf:
             with pytest.raises(RuntimeError, match="Could not open PDF"):
                 ocr_pdf(str(f))
 
-    def test_bad_page_skipped_returns_empty(self, tmp_path):
-        f = tmp_path / "doc.pdf"
-        f.write_bytes(b"dummy")
-
+    def _make_mock_doc(self):
+        """Return a (fake_pymupdf, mock_doc, mock_page) trio for per-page tests."""
         mock_pix = unittest.mock.MagicMock()
         mock_pix.width = 1
         mock_pix.height = 1
         mock_pix.samples = b"\x00\x00\x00"
-
         mock_page = unittest.mock.MagicMock()
         mock_page.get_pixmap.return_value = mock_pix
-
         mock_doc = unittest.mock.MagicMock()
         mock_doc.__iter__ = unittest.mock.MagicMock(side_effect=lambda: iter([mock_page]))
-
         fake_pymupdf = unittest.mock.MagicMock()
         fake_pymupdf.open.return_value = mock_doc
+        return fake_pymupdf, mock_doc, mock_page
+
+    def test_bad_page_skipped_returns_empty(self, tmp_path):
+        f = tmp_path / "doc.pdf"
+        f.write_bytes(b"dummy")
+        fake_pymupdf, _, _ = self._make_mock_doc()
         with unittest.mock.patch.dict(sys.modules, {"pymupdf": fake_pymupdf}), \
              unittest.mock.patch("pytesseract.image_to_string",
                                   side_effect=ValueError("bad image")):
             result = ocr_pdf(str(f))
         assert result == ""
+
+    def test_tesseract_not_found_per_page_raises_runtime(self, tmp_path):
+        f = tmp_path / "doc.pdf"
+        f.write_bytes(b"dummy")
+        fake_pymupdf, _, _ = self._make_mock_doc()
+        with unittest.mock.patch.dict(sys.modules, {"pymupdf": fake_pymupdf}), \
+             unittest.mock.patch("pytesseract.image_to_string",
+                                  side_effect=pytesseract.TesseractNotFoundError):
+            with pytest.raises(RuntimeError, match="Tesseract not found"):
+                ocr_pdf(str(f))

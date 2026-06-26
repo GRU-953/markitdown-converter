@@ -4,6 +4,23 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.43] — 2026-06-27
+
+### Tests — ocr_pdf per-page TesseractNotFoundError path (220 total, up from 219)
+
+Refactored `TestOcrPdf` to share page-iteration setup via `_make_mock_doc()` helper, and added the last untested `ocr_pdf()` path:
+
+- `test_tesseract_not_found_per_page_raises_runtime`: `pytesseract.image_to_string()` raises `TesseractNotFoundError` inside the page loop → propagates as `RuntimeError("Tesseract not found ...")` (the `finally: doc.close()` still executes)
+
+All `ocr_pdf()` error branches are now covered:
+- pymupdf not installed → RuntimeError ✓
+- PDF file not found → FileNotFoundError ✓
+- `pymupdf.open()` fails → RuntimeError("Could not open PDF") ✓
+- Per-page TesseractNotFoundError → RuntimeError ✓
+- Per-page generic exception → silently skipped (empty string appended) ✓
+
+---
+
 ## [v4.10.42] — 2026-06-27
 
 ### Tests — ocr_pdf open-failure and bad-page paths (219 total, up from 217)
