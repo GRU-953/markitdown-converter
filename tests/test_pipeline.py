@@ -1164,6 +1164,23 @@ class TestPptxFontDetection:
             z.writestr("ppt/theme/theme1.xml", xml)
         assert _pptx_font_has_bijoy(str(pptx_path)) is True
 
+    def test_slide_layout_font_detected(self, tmp_path):
+        """Bijoy font in a slide layout (ppt/slideLayouts/) is also scanned → True."""
+        import zipfile
+        pptx_path = tmp_path / "layout_font.pptx"
+        xml = (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<p:sldLayout xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"'
+            '             xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">'
+            '<p:spTree><p:sp><p:txBody><a:p><a:r>'
+            '<a:rPr><a:latin typeface="SutonnyMJ"/></a:rPr>'
+            '<a:t>evsjv</a:t>'
+            '</a:r></a:p></p:txBody></p:sp></p:spTree></p:sldLayout>'
+        )
+        with zipfile.ZipFile(str(pptx_path), "w") as z:
+            z.writestr("ppt/slideLayouts/slideLayout1.xml", xml)
+        assert _pptx_font_has_bijoy(str(pptx_path)) is True
+
     def test_empty_zip_no_parts_returns_false(self, tmp_path):
         """PPTX ZIP with no matching XML parts → parts is empty → False."""
         import zipfile
@@ -1328,3 +1345,24 @@ class TestOdtFontDetection:
         )
         assert "bijoy" in out["steps"]
         assert out["text"] == "বাংলা"
+
+    def test_fo_font_name_comma_suffix_stripped(self, tmp_path):
+        """fo:font-name='SutonnyMJ,Bold' → comma stripped before lookup → True."""
+        import zipfile
+        odt_path = tmp_path / "fo_comma.odt"
+        xml = (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<office:document-content'
+            '  xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"'
+            '  xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0"'
+            '  xmlns:fo="http://www.w3.org/1999/XSL/Format">'
+            '<office:automatic-styles>'
+            '<style:style style:name="T1" style:family="text">'
+            '<style:text-properties fo:font-name="SutonnyMJ,Bold"/>'
+            '</style:style>'
+            '</office:automatic-styles>'
+            '</office:document-content>'
+        )
+        with zipfile.ZipFile(str(odt_path), "w") as z:
+            z.writestr("content.xml", xml)
+        assert _odt_font_has_bijoy(str(odt_path)) is True

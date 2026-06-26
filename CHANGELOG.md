@@ -4,6 +4,15 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.51] — 2026-06-27
+
+### Tests — PPTX slide-layout path and ODT fo:font-name comma-suffix (252 total, up from 250)
+
+- `TestPptxFontDetection.test_slide_layout_font_detected`: Bijoy font in `ppt/slideLayouts/slideLayout1.xml` triggers detection — completes the four PPTX scan prefixes (slides, masters, layouts, theme)
+- `TestOdtFontDetection.test_fo_font_name_comma_suffix_stripped`: `fo:font-name="SutonnyMJ,Bold"` — comma suffix stripped before lookup — True; mirrors the svg:font-family comma test for the FO namespace
+
+---
+
 ## [v4.10.50] — 2026-06-27
 
 ### Tests — PPTX master/theme paths and ODT comma-suffix (250 total, up from 247)
