@@ -50,6 +50,10 @@ class TestDetectScript:
     def test_digits_only_returns_other(self):
         assert detect_script("12345") == "other"
 
+    def test_whitespace_only_returns_other(self):
+        # Spaces and newlines are not alpha and not in any Bijoy or Bengali range.
+        assert detect_script("   \n\t  ") == "other"
+
     def test_short_bijoy_two_chars_no_latin(self):
         # bj=2, la=0, sig=2 ≤ 30 → adaptive min_bj=2 → bijoy (old threshold 5 rejected this)
         assert detect_script("°©") == "bijoy"

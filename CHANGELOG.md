@@ -4,6 +4,25 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.31] — 2026-06-27
+
+### Tests — 11 new coverage-gap tests (184 total, up from 173)
+
+Closed test coverage gaps identified by audit across four modules:
+
+**`test_pipeline.py`**
+- `TestIsPdf` (new class, 7 tests via parametrize): `is_pdf()` had no unit tests — exercised `.pdf`, `.PDF`, `.SCAN.PDF` → True; `.docx`, `.xlsx`, `.png`, `noext` → False
+- `TestReadPlainTextEncoding.test_latin1_fallback`: bytes undefined in cp1252 (0x81) must fall through to the latin-1 decoder; previously only utf-8-sig and cp1252 fallbacks were tested
+
+**`test_bijoy.py`**
+- `TestDetectScript.test_whitespace_only_returns_other`: whitespace/tab/newline-only strings should return "other" (no alpha, no Bengali, no Bijoy-range chars)
+
+**`test_settings.py`**
+- `TestNewDefaults.test_onboarding_seen_default_false`: `onboarding_seen` was an untested default key
+- `TestNewDefaults.test_use_windows_colors_default_false`: `use_windows_colors` was an untested default key
+
+---
+
 ## [v4.10.30] — 2026-06-26
 
 ### Improved — RTF Bijoy font detection via fonttbl scanning

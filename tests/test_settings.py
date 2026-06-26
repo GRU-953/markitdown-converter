@@ -177,3 +177,11 @@ class TestNewDefaults:
         f.write_text(json.dumps({"history": [{"name": "ok"}, "junk", 5]}),
                      encoding="utf-8")
         assert settings.load()["history"] == [{"name": "ok"}]
+
+    def test_onboarding_seen_default_false(self, tmp_path, monkeypatch):
+        _patch_file(tmp_path, monkeypatch)
+        assert settings.load()["onboarding_seen"] is False
+
+    def test_use_windows_colors_default_false(self, tmp_path, monkeypatch):
+        _patch_file(tmp_path, monkeypatch)
+        assert settings.load()["use_windows_colors"] is False

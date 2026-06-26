@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import pipeline
 from pipeline import (
-    convert_file, is_image, is_legacy_doc, is_unsupported, is_rtf, is_xlsx, is_plain_text,
+    convert_file, is_image, is_pdf, is_legacy_doc, is_unsupported, is_rtf, is_xlsx, is_plain_text,
     _read_plain_text, _extract_xlsx_direct, _extract_legacy_doc,
     _docx_font_has_bijoy, _rtf_font_has_bijoy,
 )
@@ -46,6 +46,18 @@ class TestIsImage:
     @pytest.mark.parametrize("name", ["a.pdf", "b.docx", "c.txt", "d.xlsx", "noext"])
     def test_non_image_extensions(self, name):
         assert is_image(name) is False
+
+
+# ── is_pdf ────────────────────────────────────────────────────────────────────
+
+class TestIsPdf:
+    @pytest.mark.parametrize("name", ["report.pdf", "SCAN.PDF", "file.PDF"])
+    def test_pdf_extensions(self, name):
+        assert is_pdf(name) is True
+
+    @pytest.mark.parametrize("name", ["report.docx", "data.xlsx", "image.png", "noext"])
+    def test_non_pdf_extensions(self, name):
+        assert is_pdf(name) is False
 
 
 # ── document path ───────────────────────────────────────────────────────────
@@ -466,6 +478,14 @@ class TestReadPlainTextEncoding:
         f.write_bytes(b"\xef\xbb\xbfHello BOM")
         text = _read_plain_text(str(f))
         assert text == "Hello BOM"
+
+    def test_latin1_fallback(self, tmp_path):
+        """Bytes undefined in cp1252 (0x81, 0x8D, etc.) fall through to latin-1."""
+        f = tmp_path / "latin1.txt"
+        f.write_bytes(b"Hello \x81 World")  # 0x81 is undefined in cp1252
+        text = _read_plain_text(str(f))
+        assert "Hello" in text
+        assert "World" in text
 
 
 # ── rtf_empty step ────────────────────────────────────────────────────────────
