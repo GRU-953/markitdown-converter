@@ -4,6 +4,17 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.28] — 2026-06-26
+
+### Fixed — DOCX Bijoy font detection covers .docm / .dotx / .dotm variants
+
+The font-detection path only fired for `.docx` files. `.docm` (macro-enabled), `.dotx` (template), and `.dotm` (macro-enabled template) share the same internal ZIP+XML structure as `.docx` and now also trigger `_docx_font_has_bijoy()`.
+
+### Tests — 1 new test (165 total, up from 164)
+- `TestDocxFontDetection.test_docm_also_triggers_font_detection`: `.docm` file + Bijoy font flag → bijoy step
+
+---
+
 ## [v4.10.27] — 2026-06-26
 
 ### Fixed — DOCX font detection now also scans word/styles.xml

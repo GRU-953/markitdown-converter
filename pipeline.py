@@ -466,7 +466,7 @@ def convert_file(
         # Font-assisted detection for DOCX: when text-scan misses pure-ASCII
         # Bijoy text (simple consonants with no conjunct chars), the font name
         # embedded in the DOCX metadata is a reliable secondary signal.
-        if not needs_bijoy and p.suffix.lower() == ".docx":
+        if not needs_bijoy and p.suffix.lower() in (".docx", ".docm", ".dotx", ".dotm"):
             needs_bijoy = _docx_font_has_bijoy(str(p))
         if needs_bijoy:
             text = bijoy_func(text)

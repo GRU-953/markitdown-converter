@@ -700,6 +700,20 @@ class TestDocxFontDetection:
         assert "bijoy" in out["steps"]
         assert out["text"] == "বাংলা"
 
+    def test_docm_also_triggers_font_detection(self, tmp_path, monkeypatch):
+        """.docm (macro-enabled Word) uses the same ZIP structure → font detection applies."""
+        f = _touch(tmp_path, "macro.docm")
+        monkeypatch.setattr(pipeline, "_docx_font_has_bijoy", lambda p: True)
+        out = convert_file(
+            str(f),
+            markitdown=FakeMarkItDown("evsjv"),
+            auto_bijoy=True,
+            is_bijoy_func=lambda t: False,
+            bijoy_func=lambda t: "বাংলা",
+        )
+        assert "bijoy" in out["steps"]
+        assert out["text"] == "বাংলা"
+
     def test_bijoy_font_in_styles_xml_detected(self, tmp_path):
         """Font declared only in word/styles.xml (paragraph style) is also detected."""
         import zipfile
