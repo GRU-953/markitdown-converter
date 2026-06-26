@@ -247,6 +247,17 @@ class TestErrors:
         with pytest.raises(ValueError, match="parse failed"):
             convert_file(str(f), markitdown=BrokenMD())
 
+    def test_pdf_non_memory_error_reraises(self, tmp_path):
+        """Non-MemoryError from MarkItDown on a PDF propagates unchanged."""
+        f = _touch(tmp_path, "locked.pdf")
+
+        class BrokenMD:
+            def convert(self, path):
+                raise RuntimeError("PDF is encrypted")
+
+        with pytest.raises(RuntimeError, match="PDF is encrypted"):
+            convert_file(str(f), markitdown=BrokenMD())
+
     def test_lazy_markitdown_singleton(self, monkeypatch):
         created = []
 
@@ -287,6 +298,19 @@ class TestLegacyDoc:
         md = FakeMarkItDown("")
         out = convert_file(str(f), markitdown=md)
 
+        assert "doc_empty" in out["steps"]
+        assert out["text"] == ""
+
+    def test_doc_markitdown_exception_silenced_returns_doc_empty(self, tmp_path, monkeypatch):
+        """When OLE extraction returns empty and MarkItDown raises, exception is silenced → doc_empty."""
+        f = _touch(tmp_path, "old.doc")
+        monkeypatch.setattr(pipeline, "_extract_legacy_doc", lambda path: "")
+
+        class BrokenMD:
+            def convert(self, path):
+                raise RuntimeError("unreadable")
+
+        out = convert_file(str(f), markitdown=BrokenMD())
         assert "doc_empty" in out["steps"]
         assert out["text"] == ""
 

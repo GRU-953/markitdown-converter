@@ -4,6 +4,20 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.39] — 2026-06-27
+
+### Tests — PDF and .doc exception path coverage (213 total, up from 211)
+
+Closed two bare-`raise` / silent-swallow branches in `convert_file()`:
+
+`TestErrors` (pipeline):
+- `test_pdf_non_memory_error_reraises`: non-MemoryError from MarkItDown on a `.pdf` file propagates unchanged via the bare `raise` at pipeline.py:446
+
+`TestLegacyDoc` (pipeline):
+- `test_doc_markitdown_exception_silenced_returns_doc_empty`: when OLE extraction returns empty AND the MarkItDown fallback raises, the exception is silenced (`except Exception: text = ""`), yielding `"doc_empty"` in steps
+
+---
+
 ## [v4.10.38] — 2026-06-27
 
 ### Tests — OLE cc_text overflow guard (211 total, up from 210)
