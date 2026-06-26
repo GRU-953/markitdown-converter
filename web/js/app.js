@@ -620,6 +620,27 @@ function wireSettings() {
     if (on) { save({ theme: "System" }); applyTheme(); }
     await applyWindowsColors();
   });
+  $("check-update-btn").addEventListener("click", async () => {
+    const btn = $("check-update-btn");
+    btn.disabled = true;
+    btn.textContent = t("settings.checking");
+    try {
+      const info = await api().check_update();
+      if (info && info.has_update) {
+        _updateInfo = info;
+        renderUpdateBanner();
+        $("update-banner").style.display = "flex";
+        toast(t("update.available", { version: info.latest }), "ok");
+      } else {
+        toast(t("settings.upToDate"), "ok");
+      }
+    } catch (e) {
+      toast(t("error.generic"), "err");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = t("settings.checkUpdate");
+    }
+  });
 }
 function syncSettingsControls() {
   $("set-auto-ocr").checked = cfg.auto_ocr !== false;

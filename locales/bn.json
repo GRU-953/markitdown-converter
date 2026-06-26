@@ -106,6 +106,9 @@
   "settings.about.version": "GRU953 Markdown {version} · GRU953",
   "settings.about.credit": "Microsoft MarkItDown ও Tesseract OCR দিয়ে চালিত · ",
   "settings.about.github": "GitHub",
+  "settings.checkUpdate": "আপডেট খুঁজুন",
+  "settings.checking": "খোঁজা হচ্ছে…",
+  "settings.upToDate": "আপনার কাছে সর্বশেষ সংস্করণ আছে",
 
   "lang.english": "English",
   "lang.bangla": "বাংলা",

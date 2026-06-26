@@ -4,6 +4,13 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.17] — 2026-06-26
+
+### Added — Check for updates button in Settings
+- A **Check for updates** button appears in the About section of Settings. Users who start the app while offline, or who dismissed the automatic update banner, can now trigger the check on demand. The button shows a "Checking…" label while the request is in flight and toasts the result: either the update banner is shown if a new version is found, or a "You have the latest version" confirmation is shown if already up to date. Works in both English and বাংলা.
+
+---
+
 ## [v4.10.16] — 2026-06-26
 
 ### Fixed — PDF OCR: single bad page no longer aborts all remaining pages
