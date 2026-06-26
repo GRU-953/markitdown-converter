@@ -15,18 +15,6 @@ import urllib.request
 import json as _json
 from pathlib import Path
 
-# In the PyInstaller --onefile bundle, hide the console window immediately.
-# We build with --console (not --windowed) to avoid the runw.exe bootloader
-# hang on Python 3.14, then suppress the console so users never see it.
-if hasattr(sys, "_MEIPASS"):
-    try:
-        import ctypes as _ctypes
-        _hwnd = _ctypes.windll.kernel32.GetConsoleWindow()
-        if _hwnd:
-            _ctypes.windll.user32.ShowWindow(_hwnd, 0)   # SW_HIDE = 0
-    except Exception:
-        pass
-
 import webview
 
 import settings as _settings
@@ -34,7 +22,7 @@ from bijoy_unicode import convert_bijoy_to_unicode, detect_script
 from ocr_engine import ocr_image, ocr_pdf, tesseract_available, pymupdf_available
 from pipeline import convert_file, is_image, is_pdf, is_legacy_doc
 
-APP_VERSION = "v4.8.3"
+APP_VERSION = "v4.9.0"
 MAX_FILE_BYTES = 200 * 1024 * 1024  # 200 MB hard limit
 _RELEASES_API = "https://api.github.com/repos/GRU-953/gru953-markdown/releases/latest"
 
@@ -145,29 +133,6 @@ class Api:
                 return {"directory": str(fallback)}
         return {}
 
-    def pick_scan_file(self) -> dict:
-        """Open picker for the Scan view — accepts images AND PDFs."""
-        types = (
-            "Images & PDFs (*.png;*.jpg;*.jpeg;*.bmp;*.tiff;*.gif;*.webp;*.pdf)",
-            "All files (*.*)",
-        )
-        try:
-            result = self._window.create_file_dialog(
-                webview.FileDialog.OPEN, allow_multiple=False, file_types=types,
-                **self._dialog_dir(),
-            )
-        except Exception:
-            return {}
-        if result:
-            folder = str(Path(result[0]).parent)
-            self._cfg["last_input_folder"] = folder
-            _settings.save(self._cfg)
-            p = Path(result[0])
-            _settings.add_recent(self._cfg, str(p))
-            _settings.save(self._cfg)
-            return {"path": str(p), "name": p.name, "is_pdf": is_pdf(p)}
-        return {}
-
     def add_dropped(self, paths: list) -> list:
         """Validate dropped paths (from the HTML5 drop handler)."""
         out = []
@@ -242,6 +207,29 @@ class Api:
 
     def pymupdf_ok(self) -> bool:
         return pymupdf_available()
+
+    # ── Windows appearance ────────────────────────────────────────────────────
+
+    def get_windows_accent(self) -> dict:
+        """Return the Windows accent colour as a hex string (e.g. '#0078D4').
+
+        Reads DWM\\ColorizationColor from HKCU. The DWORD is 0xAARRGGBB.
+        Falls back to GRU953 Teal on any error (non-Windows, permission, etc.).
+        """
+        try:
+            import winreg
+            key = winreg.OpenKey(
+                winreg.HKEY_CURRENT_USER,
+                r"Software\Microsoft\Windows\DWM",
+            )
+            val, _ = winreg.QueryValueEx(key, "ColorizationColor")
+            winreg.CloseKey(key)
+            r = (val >> 16) & 0xFF
+            g = (val >> 8) & 0xFF
+            b = val & 0xFF
+            return {"ok": True, "hex": f"#{r:02X}{g:02X}{b:02X}"}
+        except Exception as exc:
+            return {"ok": False, "hex": "#0A6E5C", "error": str(exc)}
 
     # ── export ────────────────────────────────────────────────────────────────
 

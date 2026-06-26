@@ -92,7 +92,6 @@ html[data-lang="bn"] body { font-family: var(--font-bn); }
 }
 .topbar h1 { font-size: 17px; font-weight: 600; color: var(--text); }
 .topbar .sub { font-size: 13px; color: var(--text-muted); }
-.topbar-right { margin-left: auto; display: flex; align-items: center; gap: var(--space-3); }
 
 /* ── Update banner (overlay-tier accent, dismissible) ───────────────────── */
 .update-banner {
@@ -192,7 +191,7 @@ html[data-lang="bn"] body { font-family: var(--font-bn); }
   .btn[aria-busy="true"]::after { animation: none; }
 }
 
-/* ── Segmented control (.seg) — reused by lang/mode/OCR/output toggles ──── */
+/* ── Segmented control (.seg) — reused by lang/mode/output toggles ─────── */
 .seg {
   display: inline-flex; background: var(--surface-2);
   border-radius: var(--radius-md); padding: var(--space-1); gap: var(--space-1);

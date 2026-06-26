@@ -2,16 +2,14 @@
 
 /* ── State ──────────────────────────────────────────────────────────────── */
 let cfg = { theme: "System", palette: "indigo", language: "en",
-            ocr_language: "English", auto_ocr: true, auto_bijoy: true };
+            ocr_language: "English", auto_ocr: true, auto_bijoy: true,
+            use_windows_colors: false };
 let files = [];          // {path, name, is_image, status, text, steps, error}
 let selected = -1;
-let ocrPath = null;
-let ocrName = "";
 let outMode = "preview"; // preview | edit
 let LOCALES = {};        // { en: {...}, bn: {...} }
 let lang = "en";         // active UI language
-let _updateInfo = null;       // cached update info for banner re-render on lang switch
-let _ocrPickerBusy = false;  // guard: prevent rapid-click flooding from scan picker
+let _updateInfo = null;  // cached update info for banner re-render on lang switch
 const $ = (id) => document.getElementById(id);
 const api = () => window.pywebview.api;
 
@@ -48,7 +46,6 @@ function applyLang() {
   // Re-render anything whose text is built in JS.
   renderFiles();
   renderOutput();
-  refreshOcrLabel();
   refreshDetectPill();
   populateAbout();
   renderUpdateBanner();
@@ -68,11 +65,12 @@ async function start() {
   try { LOCALES = await api().get_locales(); } catch (e) { LOCALES = {}; }
   lang = (cfg.language === "bn") ? "bn" : "en";
   applyTheme(); applyPalette();
-  wireNav(); wireMode(); wireLang(); wirePalette(); wireConvert(); wireOcr(); wireBijoy();
+  wireNav(); wireMode(); wireLang(); wirePalette(); wireConvert(); wireBijoy();
   wireHistory(); wireSettings(); wireOffline();
   syncSettingsControls();
   applyLang();
   renderFiles(); renderOutput();
+  await applyWindowsColors();
   checkForUpdate();
   if (!cfg.onboarding_seen) showOnboarding();
 }
@@ -128,6 +126,34 @@ async function doUpdate(downloadUrl, pageUrl) {
     msg.textContent = t("update.failed");
     if (pageUrl) setTimeout(() => window.open(pageUrl), 800);
   }
+}
+
+/* ── Windows accent colour ───────────────────────────────────────────────────── */
+function _linearize(c) {
+  c /= 255;
+  return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+}
+async function applyWindowsColors() {
+  const root = document.documentElement;
+  if (!cfg.use_windows_colors) {
+    ["--primary", "--primary-hover", "--primary-soft", "--on-primary", "--focus-ring"].forEach(v => root.style.removeProperty(v));
+    return;
+  }
+  try {
+    const res = await api().get_windows_accent();
+    if (!res || !res.ok || !res.hex) return;
+    const hex = res.hex;
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    const lum = 0.2126 * _linearize(r) + 0.7152 * _linearize(g) + 0.0722 * _linearize(b);
+    const onPrimary = lum > 0.18 ? "#16201C" : "#FFFFFF";
+    root.style.setProperty("--primary", hex);
+    root.style.setProperty("--primary-hover", `rgba(${r},${g},${b},0.82)`);
+    root.style.setProperty("--primary-soft", `rgba(${r},${g},${b},0.14)`);
+    root.style.setProperty("--on-primary", onPrimary);
+    root.style.setProperty("--focus-ring", `rgba(${r},${g},${b},0.5)`);
+  } catch (e) {}
 }
 
 /* ── Offline awareness ──────────────────────────────────────────────────────── */
@@ -189,7 +215,6 @@ function friendlyError(raw) {
 /* ── Navigation ───────────────────────────────────────────────────────────── */
 const VIEW_KEYS = {
   convert:  ["convert.title",  "convert.sub"],
-  ocr:      ["ocr.title",      "ocr.sub"],
   bijoy:    ["bijoy.title",    "bijoy.sub"],
   history:  ["history.title",  "history.sub"],
   settings: ["settings.title", "settings.sub"],
@@ -424,43 +449,6 @@ async function exportAll() {
   else if (!res.cancelled) toast(res.error || t("toast.exportFailed"), "err");
 }
 
-/* ── Scan (OCR) view ──────────────────────────────────────────────────────── */
-function wireOcr() {
-  $("ocr-drop").addEventListener("click", pickOcr);
-  setupDrop($("ocr-drop"), pickOcr, (paths) => {
-    if (paths[0]) setOcr({ path: paths[0], name: paths[0].split(/[\\/]/).pop() });
-  });
-  document.querySelectorAll("#ocr-lang button").forEach(b =>
-    b.addEventListener("click", () => segPick("#ocr-lang", b)));
-  $("ocr-run").addEventListener("click", runOcr);
-  $("ocr-copy").addEventListener("click", () => copyText($("ocr-out").value));
-  $("ocr-export").addEventListener("click", () => saveText($("ocr-out").value, "scanned.txt"));
-}
-async function pickOcr() {
-  if (_ocrPickerBusy) return;
-  _ocrPickerBusy = true;
-  try { const m = await api().pick_scan_file(); if (m && m.path) setOcr(m); }
-  catch (e) { toast(t("toast.pickerFailed"), "err"); }
-  finally { _ocrPickerBusy = false; }
-}
-function setOcr(m) {
-  ocrPath = m.path; ocrName = m.name;
-  refreshOcrLabel();
-}
-function refreshOcrLabel() {
-  if (!ocrPath) return;  // keeps the data-i18n formats line when nothing chosen
-  const isPdf = (ocrPath || "").toLowerCase().endsWith(".pdf");
-  $("ocr-file").textContent = ocrName + (isPdf ? " " + t("ocr.pdfSuffix") : "");
-}
-async function runOcr() {
-  if (!ocrPath) return toast(t("toast.chooseScanFile"), "err");
-  const lang2 = document.querySelector("#ocr-lang button.active").dataset.lang;
-  const isPdf = (ocrPath || "").toLowerCase().endsWith(".pdf");
-  $("ocr-out").value = isPdf ? t("ocr.scanningPdf") : t("ocr.extracting");
-  const res = await api().ocr(ocrPath, lang2, $("ocr-bijoy").checked);
-  $("ocr-out").value = res.ok ? res.text : friendlyError(res.error);
-}
-
 /* ── Bijoy view ───────────────────────────────────────────────────────────── */
 function wireBijoy() {
   $("bj-in").addEventListener("input", detectBijoy);
@@ -521,10 +509,17 @@ function wireSettings() {
   $("set-auto-bijoy").addEventListener("change", e => save({ auto_bijoy: e.target.checked }));
   document.querySelectorAll("#set-ocr-lang button").forEach(b =>
     b.addEventListener("click", () => { segPick("#set-ocr-lang", b); save({ ocr_language: b.dataset.lang }); }));
+  $("set-win-colors").addEventListener("change", async e => {
+    const on = e.target.checked;
+    save({ use_windows_colors: on });
+    if (on) { save({ theme: "System" }); applyTheme(); }
+    await applyWindowsColors();
+  });
 }
 function syncSettingsControls() {
   $("set-auto-ocr").checked = cfg.auto_ocr !== false;
   $("set-auto-bijoy").checked = cfg.auto_bijoy !== false;
+  $("set-win-colors").checked = cfg.use_windows_colors === true;
   document.querySelectorAll("#set-ocr-lang button").forEach(b => {
     const on = b.dataset.lang === cfg.ocr_language;
     b.classList.toggle("active", on);

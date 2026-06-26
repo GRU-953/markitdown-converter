@@ -4,6 +4,30 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.9.0] — 2026-06-26
+
+### Removed — Scan tab
+- The dedicated **Scan to text** tab is removed. Images and PDFs dropped in the Convert tab still get OCR text automatically — the auto-OCR pipeline is fully intact. This simplifies the interface without losing any capability.
+
+### Changed — Settings
+- **Language toggle** (English / বাংলা) moved from the topbar into the **Settings** view under a new "Language" section.
+- **Appearance mode** toggle (Light / Auto / Dark) moved from the topbar into Settings under a new "Appearance mode" section.
+- The topbar is now clean title + subtitle only.
+
+### Added — Windows colours
+- New **"Windows colours"** toggle in Settings. When on: the app reads the Windows accent colour from the system registry and applies it as the primary colour throughout the UI, and the appearance mode is forced to **Auto** so light/dark follows Windows automatically. Turning it off restores the GRU953 palette choice. Works on any Windows 10/11 accent colour.
+
+### Fixed — Security / AV
+- **Removed `ctypes` console-hide block** from `app.py`. The `GetConsoleWindow / ShowWindow SW_HIDE` pattern is a textbook malware heuristic that AV engines flag. The block was already dead code because the exe is built with `--windowed` (no console is created at the OS level). Removed entirely.
+- **Added `--noupx` to the PyInstaller build** in `release.yml`. UPX-packed executables match the signature of many packers used by malware; explicitly disabling UPX keeps the binary in its clean uncompressed form.
+- **Added Windows application manifest** (`app.manifest`): declares `asInvoker` (no UAC elevation), targets Windows 10/11, and sets Per-Monitor DPI v2 awareness. Embedded into the exe via `--manifest`. A properly-manifested exe is less likely to be flagged as a suspicious unsigned binary.
+
+### Removed — Locales
+- Removed 14 scan-tab-only i18n keys from `en.json` and `bn.json` (`ocr.title`, `ocr.sub`, `ocr.dropzone.*`, `ocr.langLabel`, `ocr.bijoyCheckbox`, `ocr.run`, `ocr.output.placeholder`, `ocr.saveTxt`, `ocr.pdfSuffix`, `ocr.scanningPdf`, `ocr.extracting`, `toast.chooseScanFile`, `nav.ocr`, `nav.ocr.tip`). OCR error strings used by the Convert pipeline are preserved.
+- Added 7 new keys in both languages: `settings.lang.*`, `settings.mode.*`, `settings.winColors.*`.
+
+---
+
 ## [v4.8.3] — 2026-06-26
 
 ### Fixed — accessibility

@@ -22,6 +22,7 @@ _DEFAULTS: dict = {
     "auto_bijoy": True,
     "last_input_folder": "",
     "last_output_folder": "",
+    "use_windows_colors": False,
     "recent_files": [],
     "history": [],              # list of {name, path, ts, steps, ok}
     "onboarding_seen": False,   # show welcome overlay on first launch

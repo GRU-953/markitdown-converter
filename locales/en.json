@@ -2,13 +2,11 @@
   "app.title": "GRU953 Markdown",
 
   "nav.convert": "Convert",
-  "nav.ocr": "Scan",
   "nav.bijoy": "Bangla",
   "nav.history": "History",
   "nav.settings": "Settings",
 
   "nav.convert.tip": "Convert files",
-  "nav.ocr.tip": "Scan image or PDF to text",
   "nav.bijoy.tip": "Convert old Bangla (Bijoy/SutonnyMJ) to Unicode",
   "nav.history.tip": "Conversion history",
   "nav.settings.tip": "Settings",
@@ -19,8 +17,6 @@
 
   "convert.title": "Convert",
   "convert.sub": "Drop any file — Word, PDF, spreadsheet, image — to extract its text",
-  "ocr.title": "Scan to text",
-  "ocr.sub": "Read text from a photo, scanned image, or image-only PDF",
   "bijoy.title": "Bangla font converter",
   "bijoy.sub": "Convert old Bijoy / SutonnyMJ text to proper Unicode Bangla",
   "history.title": "History",
@@ -62,17 +58,6 @@
   "convert.result.failed": "{count} failed",
   "convert.removeFile": "Remove file",
 
-  "ocr.dropzone.main": "Drop an image or PDF here, or click to browse",
-  "ocr.dropzone.formats": "PNG · JPG · TIFF · BMP · WEBP · PDF",
-  "ocr.langLabel": "Language in the file",
-  "ocr.bijoyCheckbox": "Convert old Bangla font → Unicode",
-  "ocr.run": "Extract text",
-  "ocr.output.placeholder": "Extracted text will appear here…",
-  "ocr.saveTxt": "Save .txt",
-  "ocr.pdfSuffix": "(PDF - will scan each page)",
-  "ocr.scanningPdf": "Scanning PDF pages… this may take a moment.",
-  "ocr.extracting": "Extracting text…",
-
   "bijoy.inputLabel": "Paste old Bangla text here (Bijoy / SutonnyMJ font)",
   "bijoy.input.placeholder": "Avwg evsjvq wjwL…  ← paste Bijoy-encoded text here",
   "bijoy.run": "Convert to proper Unicode Bangla",
@@ -91,6 +76,14 @@
   "history.count.many": "{count} conversions",
   "history.clear": "Clear history",
   "history.failed": "failed",
+
+  "settings.lang.title": "Language",
+  "settings.lang.desc": "Choose the interface language.",
+  "settings.mode.title": "Appearance mode",
+  "settings.mode.desc": "Light, dark, or follow your system setting.",
+  "settings.winColors.title": "Windows colours",
+  "settings.winColors.desc": "Use your Windows accent colour and automatically follow light or dark mode.",
+  "settings.winColors.toggle": "Follow Windows colours",
 
   "settings.theme.title": "Colour theme",
   "settings.theme.desc": "Choose an accent palette. Each adapts to light and dark mode.",
@@ -162,7 +155,6 @@
   "toast.pickerFailed": "Could not open file picker",
   "toast.dropFailed": "Drop failed — click to browse instead",
   "toast.dropUnavailable": "Drag-drop unavailable — click to browse",
-  "toast.chooseScanFile": "Choose an image or PDF first",
 
   "error.generic": "Something went wrong — please try again.",
   "error.genericShort": "Something went wrong.",

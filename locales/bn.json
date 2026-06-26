@@ -2,13 +2,11 @@
   "app.title": "GRU953 Markdown",
 
   "nav.convert": "রূপান্তর",
-  "nav.ocr": "স্ক্যান",
   "nav.bijoy": "বাংলা",
   "nav.history": "ইতিহাস",
   "nav.settings": "সেটিংস",
 
   "nav.convert.tip": "ফাইল রূপান্তর করুন",
-  "nav.ocr.tip": "ছবি বা PDF থেকে লেখা বের করুন",
   "nav.bijoy.tip": "পুরোনো বাংলা (Bijoy/SutonnyMJ) থেকে Unicode-এ রূপান্তর করুন",
   "nav.history.tip": "রূপান্তরের ইতিহাস",
   "nav.settings.tip": "সেটিংস",
@@ -19,8 +17,6 @@
 
   "convert.title": "রূপান্তর",
   "convert.sub": "যেকোনো ফাইল — Word, PDF, স্প্রেডশিট, ছবি — ছেড়ে দিন, লেখা বের করে নিন।",
-  "ocr.title": "স্ক্যান করে লেখা",
-  "ocr.sub": "ছবি, স্ক্যান করা ছবি বা শুধু ছবি দিয়ে তৈরি PDF থেকে লেখা পড়ুন।",
   "bijoy.title": "বাংলা ফন্ট রূপান্তরকারী",
   "bijoy.sub": "পুরোনো Bijoy / SutonnyMJ লেখাকে সঠিক Unicode বাংলায় রূপান্তর করুন।",
   "history.title": "ইতিহাস",
@@ -62,17 +58,6 @@
   "convert.result.failed": "{count}টি ব্যর্থ",
   "convert.removeFile": "ফাইল সরান",
 
-  "ocr.dropzone.main": "এখানে একটি ছবি বা PDF ছেড়ে দিন, কিংবা ক্লিক করে বেছে নিন।",
-  "ocr.dropzone.formats": "PNG · JPG · TIFF · BMP · WEBP · PDF",
-  "ocr.langLabel": "ফাইলের ভাষা",
-  "ocr.bijoyCheckbox": "পুরোনো বাংলা ফন্ট → Unicode-এ রূপান্তর করুন",
-  "ocr.run": "লেখা বের করুন",
-  "ocr.output.placeholder": "বের করা লেখা এখানে দেখা যাবে…",
-  "ocr.saveTxt": ".txt সংরক্ষণ করুন",
-  "ocr.pdfSuffix": "(PDF - প্রতিটি পৃষ্ঠা স্ক্যান করা হবে)",
-  "ocr.scanningPdf": "PDF-এর পৃষ্ঠাগুলো স্ক্যান করা হচ্ছে… একটু সময় লাগতে পারে।",
-  "ocr.extracting": "লেখা বের করা হচ্ছে…",
-
   "bijoy.inputLabel": "পুরোনো বাংলা লেখা এখানে পেস্ট করুন (Bijoy / SutonnyMJ ফন্ট)",
   "bijoy.input.placeholder": "Avwg evsjvq wjwL…  ← Bijoy-এ লেখা টেক্সট এখানে পেস্ট করুন",
   "bijoy.run": "সঠিক Unicode বাংলায় রূপান্তর করুন",
@@ -91,6 +76,14 @@
   "history.count.many": "{count}টি রূপান্তর",
   "history.clear": "ইতিহাস মুছে ফেলুন",
   "history.failed": "ব্যর্থ",
+
+  "settings.lang.title": "ভাষা",
+  "settings.lang.desc": "ইন্টারফেসের ভাষা বেছে নিন।",
+  "settings.mode.title": "অবয়ব মোড",
+  "settings.mode.desc": "উজ্জ্বল, গাঢ় অথবা সিস্টেমের সেটিং অনুসরণ করুন।",
+  "settings.winColors.title": "Windows রং",
+  "settings.winColors.desc": "আপনার Windows অ্যাকসেন্ট রং ব্যবহার করুন এবং স্বয়ংক্রিয়ভাবে আলো বা গাঢ় মোড অনুসরণ করুন।",
+  "settings.winColors.toggle": "Windows রং অনুসরণ করুন",
 
   "settings.theme.title": "রঙের থিম",
   "settings.theme.desc": "একটি অ্যাকসেন্ট প্যালেট বেছে নিন। প্রতিটিই আলো ও অন্ধকার মোডের সঙ্গে মানিয়ে নেয়।",
@@ -162,7 +155,6 @@
   "toast.pickerFailed": "ফাইল পিকার খোলা যায়নি।",
   "toast.dropFailed": "ছেড়ে দেওয়া যায়নি — তার বদলে ক্লিক করে বেছে নিন।",
   "toast.dropUnavailable": "টেনে-ছেড়ে দেওয়া যাচ্ছে না — ক্লিক করে বেছে নিন।",
-  "toast.chooseScanFile": "প্রথমে একটি ছবি বা PDF বেছে নিন।",
 
   "error.generic": "কিছু একটা ভুল হয়েছে — অনুগ্রহ করে আবার চেষ্টা করুন।",
   "error.genericShort": "কিছু একটা ভুল হয়েছে।",

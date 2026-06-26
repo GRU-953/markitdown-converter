@@ -35,7 +35,6 @@
         </svg>
       </div>
       <button class="nav-btn active" data-view="convert" data-i18n-title="nav.convert.tip" title="Convert files"><i class="ti ti-transform"></i><span data-i18n="nav.convert">Convert</span></button>
-      <button class="nav-btn" data-view="ocr" data-i18n-title="nav.ocr.tip" title="Scan image or PDF to text"><i class="ti ti-scan"></i><span data-i18n="nav.ocr">Scan</span></button>
       <button class="nav-btn" data-view="bijoy" data-i18n-title="nav.bijoy.tip" title="Convert old Bangla (Bijoy/SutonnyMJ) to Unicode"><i class="ti ti-language"></i><span data-i18n="nav.bijoy">Bangla</span></button>
       <button class="nav-btn" data-view="history" data-i18n-title="nav.history.tip" title="Conversion history"><i class="ti ti-history"></i><span data-i18n="nav.history">History</span></button>
       <div class="nav-spacer"></div>
@@ -46,17 +45,6 @@
       <header class="topbar">
         <h1 id="view-title" data-i18n="convert.title">Convert</h1>
         <span class="sub" id="view-sub" data-i18n="convert.sub">Documents, images &amp; spreadsheets → Markdown</span>
-        <div class="topbar-right">
-          <div class="seg" id="lang-seg" role="radiogroup" aria-label="Language / ভাষা">
-            <button data-lang="en" role="radio" aria-checked="true" data-i18n="lang.english">English</button>
-            <button data-lang="bn" role="radio" aria-checked="false" data-i18n="lang.bangla">বাংলা</button>
-          </div>
-          <div class="seg" id="mode-seg" role="radiogroup" aria-label="Appearance mode">
-            <button data-mode="Light" role="radio" aria-checked="false" data-i18n="mode.light">Light</button>
-            <button data-mode="System" role="radio" aria-checked="true" data-i18n="mode.auto">Auto</button>
-            <button data-mode="Dark" role="radio" aria-checked="false" data-i18n="mode.dark">Dark</button>
-          </div>
-        </div>
       </header>
 
       <div id="offline-banner" class="offline-banner" style="display:none" role="status">
@@ -121,31 +109,6 @@
           </div>
         </section>
 
-        <!-- ── Scan (OCR) view ───────────────────────────────────────────── -->
-        <section class="view" id="view-ocr">
-          <div class="stack">
-            <button class="dropzone" id="ocr-drop" type="button" style="margin:0;">
-              <i class="ti ti-photo-scan" aria-hidden="true"></i><span data-i18n="ocr.dropzone.main">Drop an image or PDF here, or click to browse</span>
-              <span class="small" id="ocr-file" data-i18n="ocr.dropzone.formats">PNG · JPG · TIFF · BMP · WEBP · PDF</span>
-            </button>
-            <div class="row">
-              <span class="label" data-i18n="ocr.langLabel">Language in the file</span>
-              <div class="seg" id="ocr-lang" role="radiogroup" aria-label="OCR language">
-                <button data-lang="English" class="active" role="radio" aria-checked="true" data-i18n="lang.english">English</button>
-                <button data-lang="বাংলা" role="radio" aria-checked="false" data-i18n="lang.bangla">বাংলা</button>
-                <button data-lang="Both" role="radio" aria-checked="false" data-i18n="lang.both">Both</button>
-              </div>
-              <label class="checkbox"><input type="checkbox" id="ocr-bijoy" checked> <span data-i18n="ocr.bijoyCheckbox">Convert old Bangla font → Unicode</span></label>
-              <button class="btn primary" id="ocr-run" style="margin-left:auto;"><i class="ti ti-scan"></i><span data-i18n="ocr.run">Extract text</span></button>
-            </div>
-            <textarea class="field" id="ocr-out" data-i18n-ph="ocr.output.placeholder" placeholder="Extracted text will appear here…"></textarea>
-            <div class="row">
-              <button class="btn" id="ocr-copy"><i class="ti ti-copy"></i><span data-i18n="btn.copy">Copy</span></button>
-              <button class="btn" id="ocr-export"><i class="ti ti-download"></i><span data-i18n="ocr.saveTxt">Save .txt</span></button>
-            </div>
-          </div>
-        </section>
-
         <!-- ── Bijoy view ────────────────────────────────────────────────── -->
         <section class="view" id="view-bijoy">
           <div class="stack">
@@ -178,6 +141,32 @@
         <!-- ── Settings view ─────────────────────────────────────────────── -->
         <section class="view" id="view-settings">
           <div class="settings-wrap">
+
+            <div class="setting">
+              <h3 data-i18n="settings.lang.title">Language</h3>
+              <p data-i18n="settings.lang.desc">Choose the interface language.</p>
+              <div class="seg" id="lang-seg" role="radiogroup" aria-label="Language / ভাষা">
+                <button data-lang="en" role="radio" aria-checked="true" data-i18n="lang.english">English</button>
+                <button data-lang="bn" role="radio" aria-checked="false" data-i18n="lang.bangla">বাংলা</button>
+              </div>
+            </div>
+
+            <div class="setting">
+              <h3 data-i18n="settings.mode.title">Appearance mode</h3>
+              <p data-i18n="settings.mode.desc">Light, dark, or follow your system setting.</p>
+              <div class="seg" id="mode-seg" role="radiogroup" aria-label="Appearance mode">
+                <button data-mode="Light" role="radio" aria-checked="false" data-i18n="mode.light">Light</button>
+                <button data-mode="System" role="radio" aria-checked="true" data-i18n="mode.auto">Auto</button>
+                <button data-mode="Dark" role="radio" aria-checked="false" data-i18n="mode.dark">Dark</button>
+              </div>
+            </div>
+
+            <div class="setting">
+              <h3 data-i18n="settings.winColors.title">Windows colours</h3>
+              <p data-i18n="settings.winColors.desc">Use your Windows accent colour and automatically follow light or dark mode.</p>
+              <label class="checkbox"><input type="checkbox" id="set-win-colors"> <span data-i18n="settings.winColors.toggle">Follow Windows colours</span></label>
+            </div>
+
             <div class="setting">
               <h3 data-i18n="settings.theme.title">Colour theme</h3>
               <p data-i18n="settings.theme.desc">Choose an accent palette. Each adapts to light and dark mode.</p>
